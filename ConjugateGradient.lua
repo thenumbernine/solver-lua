@@ -1,7 +1,8 @@
 --[[
 args:
 	A = linear function A : x -> x
-	b = vector
+	b = solution vector
+	x (optional) = initial guess
 	clone = vector clone
 	dot = vector dot
 	norm = vector norm (defaults to dot(x,x))
@@ -20,7 +21,7 @@ return function(args)
 	local maxiter = args.maxiter or 10000
 
 	b = clone(b)
-	local x = clone(b)
+	local x = clone(args.x0 or b)
 	local r = b - A(x)
 	local r2 = norm(r)
 	if errorCallback and errorCallback(r2) then return x end
