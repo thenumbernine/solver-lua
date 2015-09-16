@@ -1,7 +1,8 @@
 --[[
 args:
 	A = linear function A : x -> x
-	b = vector
+	b = solution to Ax=b
+	x (optional) = initial guess.  uses b by default.
 	clone = vector clone
 	dot = vector dot
 	norm = vector norm (defaults to dot(x,x))
@@ -26,7 +27,7 @@ return function(args)
 
 	b = clone(b)
 	A_diag = clone(A_diag)
-	local x = clone(b)
+	local x = clone(args.x or b)
 	for iter=1,maxiter do
 		local nx = b - A(x)
 		nx = nx + scale(ADiag, x)	-- remove diagonal

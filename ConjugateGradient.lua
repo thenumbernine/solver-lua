@@ -2,7 +2,7 @@
 args:
 	A = linear function A : x -> x
 	b = solution vector
-	x (optional) = initial guess
+	x0 (optional) = initial guess
 	clone = vector clone
 	dot = vector dot
 	norm = vector norm (defaults to dot(x,x))
