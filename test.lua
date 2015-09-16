@@ -3,6 +3,9 @@ local class = require 'ext.class'
 local table = require 'ext.table'
 local file = require 'ext.file'
 local range = require 'ext.range'
+local Jacobi = require 'LinearSolvers.Jacobi'
+local ConjugateGradient = require 'LinearSolvers.ConjugateGradient'
+local ConjugateResidual = require 'LinearSolvers.ConjugateResidual'
 
 local vec = class()
 
@@ -69,10 +72,6 @@ end
 function vec:__tostring()
 	return '{'..table.concat(self, ', ')..'}'
 end
-
-local Jacobi = require 'LinearSolvers.Jacobi'
-local ConjugateGradient = require 'LinearSolvers.ConjugateGradient'
-local ConjugateResidual = require 'LinearSolvers.ConjugateResidual'
 
 function solveBiConjugateGradient(A,b,AT,MInv,MInvT)
 	local maxiter = 10000
