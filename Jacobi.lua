@@ -1,4 +1,5 @@
 --[[
+source: https://en.wikipedia.org/wiki/Jacobi_method#Algorithm
 args:
 	A = linear function A : x -> x
 	b = solution to Ax=b

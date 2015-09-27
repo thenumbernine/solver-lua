@@ -85,6 +85,22 @@ local function matfunc(A)
 	end
 end
 
+local function matfuncT(A)
+	-- y_i = A_ji x_j
+	return function(x)
+		local y = vec(#A[1])
+		for i=1,#A[1] do
+			assert(#x == #A)
+			local sum = 0
+			for j=1,#A do
+				sum = sum + A[j][i] * x[j]
+			end
+			y[i] = sum
+		end
+		return y
+	end
+end
+
 os.remove('cr.txt')
 os.remove('cg.txt')
 for _,problem in ipairs{
@@ -117,6 +133,7 @@ for _,problem in ipairs{
 } do
 	local A,b = problem.A,problem.b
 	local fA = matfunc(A)
+	local fAT = matfuncT(A)
 	local fMInv = function(x)
 		x = vec(x)
 		for i=1,#x do
@@ -124,6 +141,7 @@ for _,problem in ipairs{
 		end
 		return x
 	end
+	local fMInvT = fMInv	-- so long as we're just using Jacobi preconditioning -- i.e. diagonals
 
 --[[
 	fA = function(x)

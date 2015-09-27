@@ -1,11 +1,12 @@
 --[[
+source: https://en.wikipedia.org/wiki/Conjugate_gradient_method#The_preconditioned_conjugate_gradient_method
 args:
 	A = linear function A : x -> x
 	b = solution vector
 	x0 (optional) = initial guess
 	clone = vector clone
 	dot = vector dot
-	MInv = preconditioner linear function MInv : x -> x
+	MInv = inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional)
 	epsilon (optional)
 	maxiter (optional)
@@ -15,7 +16,7 @@ return function(args)
 	local b = assert(args.b)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
-	local MInv = args.MInv or clone	-- preconditioner
+	local MInv = args.MInv or clone
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
@@ -38,10 +39,13 @@ return function(args)
 		local beta = nRDotZ / rDotZ
 		if errorCallback and errorCallback(nRDotZ, iter) then break end
 		if nRDotZ < epsilon then break end
+		
+		local np = nz + p * beta
+		
 		r = nr
 		z = nz
 		rDotZ = nRDotZ
-		p = r + p * beta
+		p = np	-- SOLVED! P = NP! MILLION DOLLARS FOR ME!
 	end
 	return x
 end
