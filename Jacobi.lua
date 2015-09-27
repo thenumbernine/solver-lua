@@ -34,7 +34,7 @@ return function(args)
 		nx = invScale(nx, ADiag)		-- divide by diagonal
 		local r = b - A(nx)
 		local r2 = norm(r)
-		if errorCallback and errorCallback(r2) then break end
+		if errorCallback and errorCallback(r2, iter) then break end
 		if r2 < epsilon then break end
 		x = nx
 	end

@@ -24,7 +24,7 @@ return function(args)
 	local x = clone(args.x0 or b)
 	local r = b - A(x)
 	local r2 = norm(r)
-	if errorCallback and errorCallback(r2) then return x end
+	if errorCallback and errorCallback(r2, 0) then return x end
 	if r2 < epsilon then return x end
 	local p = clone(r)
 	for iter=1,maxiter do
@@ -34,7 +34,7 @@ return function(args)
 		local nr = r - Ap * alpha
 		local nr2 = norm(nr)
 		local beta = nr2 / r2
-		if errorCallback and errorCallback(nr2) then break end
+		if errorCallback and errorCallback(nr2, iter) then break end
 		if nr2 < epsilon then break end
 		r = nr
 		r2 = nr2
