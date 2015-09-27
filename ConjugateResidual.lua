@@ -6,7 +6,6 @@ args:
 	x0 (optional) = initial guess
 	clone = vector clone
 	dot = vector dot
-	norm = vector norm (defaults to dot(x,x))
 	MInv = inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional)
 	epsilon (optional)
@@ -23,7 +22,6 @@ return function(args)
 	local b = assert(args.b)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
-	local norm = args.norm or function(a) return dot(a,a) end
 	local MInv = args.MInv or clone
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
@@ -32,10 +30,10 @@ return function(args)
 	b = clone(b)
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
-	
-	local r2 = norm(r)
-	if errorCallback and errorCallback(r2, 0) then return x end
-	if r2 < epsilon then return x end
+
+	local err = dot(r, r)
+	if errorCallback and errorCallback(err, 0) then return x end
+	if err < epsilon then return x end
 	
 	local Ar = A(r)
 	local rAr = dot(r, Ar)
@@ -48,16 +46,16 @@ return function(args)
 		local nAr = A(nr)
 		local nrAr = dot(nr, nAr)
 		local beta = nrAr / rAr
-		
-		local nr2 = norm(nr)
-		if errorCallback and errorCallback(nr2, iter) then break end
-		if nr2 < epsilon then break end
-		
+	
+		local err = dot(nr, nr)
+		if errorCallback and errorCallback(err, iter) then break end
+		if err < epsilon then break end
+
 		r = nr
 		rAr = nrAr
 		Ar = nAr
-		p = r + p * beta
-		Ap = Ar + Ap * beta
+		p = nr + p * beta
+		Ap = nAr + Ap * beta
 	end
 	return x
 end

@@ -101,17 +101,18 @@ local function matfuncT(A)
 	end
 end
 
-os.remove('cr.txt')
+os.remove('jacobi.txt')
 os.remove('cg.txt')
-for _,problem in ipairs{
-	-- works with jacobi:
---	{A={{1,.07,0,0,0},{-.07,1,.07,0,0},{0,-.07,1,.07,0},{0,0,-.07,1,.07},{0,0,0,-.07,1}}, b={1,2,3,4,5}},
-	-- doesn't:
---	{A={{1,2},{3,4}}, b={5,6}},
---	{A={{1,2,3},{4,5,6},{7,8,9}}, b={100,200,300}},
---	{A={{1,1},{2,1}}, b={2,0}}
-	
+os.remove('cr.txt')
 
+for _,problemInfo in ipairs{
+	-- works with jacobi:
+	{name='prob1', A={{1,.07,0,0,0},{-.07,1,.07,0,0},{0,-.07,1,.07,0},{0,0,-.07,1,.07},{0,0,0,-.07,1}}, b={1,2,3,4,5}},
+	-- doesn't:
+	{name='prob2', A={{1,2},{3,4}}, b={5,6}},
+	{name='prob3', A={{1,2,3},{4,5,6},{7,8,9}}, b={100,200,300}},
+	{name='prob4', A={{1,1},{2,1}}, b={2,0}},
+	
 	(function()
 		local n = 16
 		local A = {}
@@ -128,96 +129,90 @@ for _,problem in ipairs{
 			if i>1 then A[i][i-1] = 1/4 end
 			if i<n then A[i][i+1] = 1/4 end
 		end
-		return {A=A, b=b}
+		return {name='prob5', A=A, b=b}
 	end)(),
 } do
-	local A,b = problem.A,problem.b
-	local fA = matfunc(A)
-	local fAT = matfuncT(A)
-	local fMInv = function(x)
-		x = vec(x)
-		for i=1,#x do
-			x[i] = x[i] / A[i][i]
+	for _,solverInfo in ipairs{
+		{
+			name = '-jacobi',
+			solver = Jacobi,
+		},
+		{
+			name = '-cg',
+			solver = ConjugateGradient,
+		},
+		{
+			name = '-cr',
+			solver = ConjugateResidual,
+		},
+	} do
+		--[[
+		preconditioners:
+		MInv(x) = M^-1 * x for M the preconditioning matrix: a matrix such that M^-1 * A has a smaller condition number than A alone
+			condition number: sigmaMax(A) / sigmaMin(A) for sigmaMax & sigmaMin the max & min singular values of A, for singular values the eigenvalues of A^* A
+		popular preconditioner options:
+			Jacobi preconditioner: M = diag(a_ii)
+			SPAI: M minimizes ||A M^-1 - I||_F for ||.||_F the Frobenius norm
+		--]]
+		for _,precondInfo in ipairs{
+			{	-- no preconditioner
+				suffix='-noM',
+				makeFMInv = function(A) end,
+			},
+			{	-- jacobi preconditioner
+				suffix = '-withM',
+				makeFMInv = function(A)
+					return function(x)
+						x = vec(x)
+						for i=1,#x do
+							x[i] = x[i] / A[i][i]
+						end
+						return x
+					end
+				end,
+			},
+		} do
+			local A,b = problemInfo.A,problemInfo.b
+			local fA = matfunc(A)
+			local fMInv = precondInfo.makeFMInv(A)
+		
+			-- only used for biconjugate methods
+			local fAT = matfuncT(A)
+			local fMInvT = fMInv	-- so long as we're just using Jacobi preconditioning -- i.e. diagonals
+		
+			-- only used for jacobi method
+			local ADiag = vec(range(#A):map(function(i) return A[i][i] end))
+
+			local errors = table()
+			local x = solverInfo.solver{
+				A = fA,
+				AT = fAT,
+				ADiag = ADiag,
+				b = b,
+				errorCallback = function(err) errors:insert(err) end,
+				clone = vec,
+				norm = vec.norm,
+				dot = vec.dot,
+				MInv = fMInv,
+				MInvT = fMInvT,
+				scale = function(a,b)
+					local c = vec(a)
+					for i=1,#c do
+						c[i] = c[i] * b[i]
+					end
+					return c
+				end,
+				invScale = function(a,b)
+					local c = vec(a)
+					for i=1,#c do
+						c[i] = c[i] / b[i]
+					end
+					return c
+				end,
+			}
+			local filename = problemInfo.name..solverInfo.name..precondInfo.suffix
+			print(filename, x)
+			file[filename..'.txt'] = errors:concat'\n'
 		end
-		return x
 	end
-	local fMInvT = fMInv	-- so long as we're just using Jacobi preconditioning -- i.e. diagonals
-
---[[
-	fA = function(x)
-		local y = vec(#x)	--make a vector as big as x is
-		for i=2,m-1 do
-			for j=2,n-1 do
-				k=j+n*i
-				y[k] = x[k] + x[k-1] + x[k+1] + x[k+n] + x[k-n]
-			end
-		end
-		return y
-	end
---]]
-
---[[
-preconditioners:
-MInv(x) = M^-1 * x for M the preconditioning matrix: a matrix such that M^-1 * A has a smaller condition number than A alone
-	condition number: sigmaMax(A) / sigmaMin(A) for sigmaMax & sigmaMin the max & min singular values of A, for singular values the eigenvalues of A^* A
-popular preconditioner options:
-	Jacobi preconditioner: M = diag(a_ii)
-	SPAI: M minimizes ||A M^-1 - I||_F for ||.||_F the Frobenius norm
---]]
-
-	local errors = table()
-	local x = ConjugateGradient{
-		A = fA,
-		MInv = fMInv,
-		b = b,
-		errorCallback = function(err) errors:insert(err) end,
-		clone = vec,
-		norm = vec.norm,
-		dot = vec.dot,
-	}
-	print(x)
-	file['cg.txt'] = errors:concat'\n'
-
-	local errors = table()
-	local x = ConjugateResidual{
-		A = fA,
-		b = b,
-		errorCallback = function(err) errors:insert(err) end,
-		clone = vec,
-		norm = vec.norm,
-		dot = vec.dot,
-	}
-	print(x)
-	file['cr.txt'] = errors:concat'\n'
-
-	local ADiag = range(#A):map(function(i) return A[i][i] end)
-	ADiag = vec(ADiag)
-	
-	local errors = table()
-	local x = Jacobi{
-		A = fA,
-		b = b,
-		ADiag = ADiag,
-		errorCallback = function(err) errors:insert(err) end,
-		clone = vec,
-		norm = vec.norm,
-		dot = vec.dot,
-		scale = function(a,b)
-			local c = vec(a)
-			for i=1,#c do
-				c[i] = c[i] * b[i]
-			end
-			return c
-		end,
-		invScale = function(a,b)
-			local c = vec(a)
-			for i=1,#c do
-				c[i] = c[i] / b[i]
-			end
-			return c
-		end,
-	}
-	print(x)
-	file['jacobi.txt'] = errors:concat'\n'
 end
-

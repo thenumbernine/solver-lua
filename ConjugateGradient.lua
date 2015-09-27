@@ -26,8 +26,11 @@ return function(args)
 	local r = b - A(x)
 	local z = MInv(r)
 	local rDotZ = dot(r, z)
-	if errorCallback and errorCallback(rDotZ, 0) then return x end
-	if rDotZ < epsilon then return x end
+	
+	local err = dot(r,r)
+	if errorCallback and errorCallback(err, 0) then return x end
+	if err < epsilon then return x end
+	
 	local p = clone(z)
 	for iter=1,maxiter do
 		local Ap = A(p)
@@ -37,8 +40,10 @@ return function(args)
 		local nz = MInv(nr)
 		local nRDotZ = dot(nr, nz)
 		local beta = nRDotZ / rDotZ
-		if errorCallback and errorCallback(nRDotZ, iter) then break end
-		if nRDotZ < epsilon then break end
+		
+		local err = dot(r, r)
+		if errorCallback and errorCallback(err, iter) then break end
+		if err < epsilon then break end
 		
 		local np = nz + p * beta
 		
