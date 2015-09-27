@@ -73,26 +73,6 @@ function vec:__tostring()
 	return '{'..table.concat(self, ', ')..'}'
 end
 
-function solveBiConjugateGradient(A,b,AT,MInv,MInvT)
-	local maxiter = 10000
-	local x = vec(b)
-	local xStar = vec(x)
-	local r = b - A(x)
-	local rStar = bStar - AT(xStar)
-	local p = MInv(r)
-	local pStar = MInvT(rStar)
-	for iter=1,maxiter do
-		local alpha = vec.dot(rStar, MInv(r)) / vec.dot(pStar, A(p))
-		local nx = x + alpha * p
-		local nxStar = xStar + alpha * pStar	--conjugate(alpha)
-		local nr = r - alpha * A(p)
-		local nrStar = rStar - alpha * AT(pStar)	-- conjugate(alpha)
-		local beta = vec.dot(nrStar, MInv(nr))
-		local np = MInv(nr) + beta * p
-		local npStar = MInvT(nrStar) + beta * pStar	-- conjugate(beta)
-	end
-end
-
 local function matfunc(A)
 	-- y_i = A_ij x_j
 	return function(x)
@@ -137,6 +117,13 @@ for _,problem in ipairs{
 } do
 	local A,b = problem.A,problem.b
 	local fA = matfunc(A)
+	local fMInv = function(x)
+		x = vec(x)
+		for i=1,#x do
+			x[i] = x[i] / A[i][i]
+		end
+		return x
+	end
 
 --[[
 	fA = function(x)
@@ -151,9 +138,19 @@ for _,problem in ipairs{
 	end
 --]]
 
+--[[
+preconditioners:
+MInv(x) = M^-1 * x for M the preconditioning matrix: a matrix such that M^-1 * A has a smaller condition number than A alone
+	condition number: sigmaMax(A) / sigmaMin(A) for sigmaMax & sigmaMin the max & min singular values of A, for singular values the eigenvalues of A^* A
+popular preconditioner options:
+	Jacobi preconditioner: M = diag(a_ii)
+	SPAI: M minimizes ||A M^-1 - I||_F for ||.||_F the Frobenius norm
+--]]
+
 	local errors = table()
 	local x = ConjugateGradient{
 		A = fA,
+		MInv = fMInv,
 		b = b,
 		errorCallback = function(err) errors:insert(err) end,
 		clone = vec,
