@@ -41,7 +41,7 @@ return function(args)
 		local nRDotZ = dot(nr, nz)
 		local beta = nRDotZ / rDotZ
 		
-		local err = dot(r, r)
+		local err = dot(nr, nr)
 		if errorCallback and errorCallback(err, iter) then break end
 		if err < epsilon then break end
 		
