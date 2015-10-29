@@ -14,16 +14,15 @@ args:
 --]]
 return function(args)
 	local A = assert(args.A)
-	local b = assert(args.b)
 	local errorCallback = args.errorCallback
-	local clone = args.clone
-	local dot = args.dot
-	local scale = args.scale
-	local invScale = args.invScale
+	local clone = assert(args.clone)
+	local dot = assert(args.dot)
+	local scale = assert(args.scale)
+	local invScale = assert(args.invScale)
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
 
-	b = clone(b)
+	local b = clone(assert(args.b))
 	local ADiag = clone(assert(args.ADiag))
 	local x = clone(args.x or b)
 	for iter=1,maxiter do

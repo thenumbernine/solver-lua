@@ -3,13 +3,15 @@ source: https://en.wikipedia.org/wiki/Conjugate_residual_method#Preconditioning
 args:
 	A = linear function A : x -> x
 	b = solution vector
-	x0 (optional) = initial guess
-	clone = vector clone
-	dot = vector dot
+	x0 (optional) = initial guess vector
+	clone = vector clone function
+	dot = vector dot function
 	MInv = inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional)
+	errorCallback (optional) - accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
+
+vectors need operators + - * overloaded
 
 this method applies MInv to r, then computes norms, etc
 the conjugate gradient applies MInv as a weighted norm of r (i.e. only applies once between r's rather than twice) 
