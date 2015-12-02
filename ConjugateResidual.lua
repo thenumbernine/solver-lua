@@ -7,7 +7,7 @@ args:
 	clone = vector clone function
 	dot = vector dot function
 	MInv = inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) - accepts error, iteration; returns true if iterations should be stopped
+	errorCallback (optional) = accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 
@@ -29,7 +29,6 @@ return function(args)
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
 
-	b = clone(b)
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
 

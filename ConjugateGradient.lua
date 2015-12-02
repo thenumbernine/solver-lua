@@ -21,36 +21,32 @@ return function(args)
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
 
-	b = clone(b)
 	local x = clone(args.x0 or b)
 	local r = b - A(x)
-	local z = MInv(r)
-	local rDotZ = dot(r, z)
+	local MInvR = MInv(r)
+	local rDotMInvR = dot(r, MInvR)
 	
 	local err = dot(r,r)
 	if errorCallback and errorCallback(err, 0) then return x end
 	if err < epsilon then return x end
 	
-	local p = clone(z)
+	local p = clone(MInvR)
 	for iter=1,maxiter do
 		local Ap = A(p)
-		local alpha = rDotZ / dot(p, Ap)
+		local alpha = rDotMInvR / dot(p, Ap)
 		x = x + p * alpha
-		local nr = r - Ap * alpha
-		local nz = MInv(nr)
-		local nRDotZ = dot(nr, nz)
-		local beta = nRDotZ / rDotZ
+		r = r - Ap * alpha
 		
-		local err = dot(nr, nr)
+		local err = dot(r, r)
 		if errorCallback and errorCallback(err, iter) then break end
 		if err < epsilon then break end
 		
-		local np = nz + p * beta
+		MInvR = MInv(r)
+		local nRDotMInvR = dot(r, MInvR)
+		local beta = nRDotMInvR / rDotMInvR
+		p = MInvR + p * beta
 		
-		r = nr
-		z = nz
-		rDotZ = nRDotZ
-		p = np	-- SOLVED! P = NP! MILLION DOLLARS FOR ME!
+		rDotMInvR = nRDotMInvR
 	end
 	return x
 end

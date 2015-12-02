@@ -101,10 +101,6 @@ local function matfuncT(A)
 	end
 end
 
-os.remove('jacobi.txt')
-os.remove('cg.txt')
-os.remove('cr.txt')
-
 for _,problemInfo in ipairs{
 	-- works with jacobi:
 	{name='prob1', A={{1,.07,0,0,0},{-.07,1,.07,0,0},{0,-.07,1,.07,0},{0,0,-.07,1,.07},{0,0,0,-.07,1}}, b={1,2,3,4,5}},
