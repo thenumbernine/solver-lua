@@ -9,7 +9,7 @@ local function matmul(a,b)
 	local n = #a[1]
 	local p = #b
 	local q = #b[1]
-	assert(n == p, "matrix sizes don't match")
+	assert(n == p, "matrix sizes don't match.  tried to multiply "..m..' x '..n..' with '..p..' x '..q)
 	local c = {}
 	for i=1,m do
 		c[i] = {}
@@ -24,22 +24,47 @@ local function matmul(a,b)
 	return c
 end
 
-local n = 5
+local function transpose(a)
+	local m = #a
+	local n = #a[1]
+	local t = {}
+	for i=1,n do
+		t[i] = {}
+		for j=1,m do
+			t[i][j] = a[j][i]
+		end
+	end
+	return t
+end
+local function rebuildQR(q, r)
+	return matmul(q,r)
+end
+local function rebuildLUP(l,u,p)
+	return matmul(transpose(p),matmul(l,u))
+end
 
-local a = matrix.lambda(5,5,function(i,j) return math.random() end)
-print('a=\n'..a)
+local errs = table()
+for n=1,100,5 do
+	for m=n,n do	-- LU requires square, the others require m>=n for mxn matrices
+		local a = matrix.lambda(m,n,function(i,j) return math.random() end)
+		--print('a=\n'..a)
 
-for _,info in ipairs{
-	{name='GramSchmidt', solver=require 'LinearSolvers.GramSchmidt'},
-	{name='GramSchmidtClassical', solver=require 'LinearSolvers.GramSchmidtClassical'},
-} do
-	print(info.name)
-	local q, r = info.solver(a)
-	q, r = matrix(q), matrix(r)
-	print('q=\n'..q)
-	print('r=\n'..r)
+		for _,info in ipairs{
+			{name='GramSchmidt', solver=require 'LinearSolvers.GramSchmidt', rebuild=rebuildQR},
+			{name='GramSchmidtClassical', solver=require 'LinearSolvers.GramSchmidtClassical', rebuild=rebuildQR},
+			{name='HouseholderQR', solver=require 'LinearSolvers.HouseholderQR', rebuild=rebuildQR},
+			{name='LUDecomposition', solver=require 'LinearSolvers.LUDecomposition', rebuild=rebuildLUP},
+		} do
+			local a_ = info.rebuild(info.solver(a))
+			local err = (a_ - a):norm()
+			--print('|qr-a| ='..err)
+			if not errs[info.name] then errs[info.name] = {} end
+			errs[info.name].min = math.min(errs[info.name].min or err, err)
+			errs[info.name].max = math.max(errs[info.name].max or err, err)
+		end
+	end
+end
 
-	print('qr=\n'..matrix(matmul(q,r)))
-	print('qr-a=\n'..(matmul(q,r)-a))
-	print('|qr-a| ='..(matmul(q,r)-a):norm())
+for name,info in pairs(errs) do
+	print(name, 'min', info.min, 'max', info.max)
 end

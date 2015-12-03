@@ -1,5 +1,5 @@
 --[[
-Algorithm 8.1 from Thefethen and Bau "Numerical Liner Algebra"
+Algorithm 8.1 from Trefethen and Bau "Numerical Liner Algebra"
 
 input:
 	a = m x n table of numbers
@@ -12,14 +12,18 @@ return function(a)
 	local v = {}
 	local r = {}
 	local q = {}
-	for i=1,n do
+	for i=1,m do
 		v[i] = {}
-		r[i] = {}
 		q[i] = {}
-		for j=1,m do
+		for j=1,n do
 			v[i][j] = a[i][j]
-			r[i][j] = 0
 			q[i][j] = 0
+		end
+	end
+	for i=1,n do
+		r[i] = {}
+		for j=1,n do
+			r[i][j] = 0
 		end
 	end
 	for i=1,n do

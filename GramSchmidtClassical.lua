@@ -1,25 +1,29 @@
 --[[
-Algorithm 7.1 from Thefethen and Bau "Numerical Liner Algebra"
+Algorithm 7.1 from Trefethen and Bau "Numerical Liner Algebra"
 
 input:
-	a = n x n table of numbers
+	a = m x n table of numbers
 output:
 	q, r decomposition
 --]]
 return function(a)
 	local m = #a
 	local n = #a[1]
-	local r = {}
 	local v = {}
 	local q = {}
 	for i=1,m do
-		r[i] = {}
 		v[i] = {}
 		q[i] = {}
 		for j=1,n do
-			r[i][j] = 0
 			v[i][j] = 0
 			q[i][j] = 0
+		end
+	end
+	local r = {}
+	for i=1,n do
+		r[i] = {}
+		for j=1,n do
+			r[i][j] = 0
 		end
 	end
 	for j=1,n do
