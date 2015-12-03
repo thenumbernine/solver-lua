@@ -12,11 +12,11 @@ return function(a)
 	local v = {}
 	local r = {}
 	local q = {}
-	for j=1,m do
+	for i=1,n do
 		v[i] = {}
 		r[i] = {}
 		q[i] = {}
-		for i=1,n do
+		for j=1,m do
 			v[i][j] = a[i][j]
 			r[i][j] = 0
 			q[i][j] = 0
@@ -24,12 +24,12 @@ return function(a)
 	end
 	for i=1,n do
 		local norm = 0
-		for j=1,m do
-			norm = norm + v[j][i] * v[j][i]
+		for k=1,m do
+			norm = norm + v[k][i] * v[k][i]
 		end
 		r[i][i] = math.sqrt(norm)
-		for j=1,m do
-			q[j][i] = v[j][i] / r[i][i]
+		for k=1,m do
+			q[k][i] = v[k][i] / r[i][i]
 		end
 		for j=i+1,n do
 			local sum = 0
@@ -38,7 +38,8 @@ return function(a)
 			end
 			r[i][j] = sum
 			for k=1,m do
-			v[k][j] = v[k][j] - r[i][j] * q[k][i]
+				v[k][j] = v[k][j] - r[i][j] * q[k][i]
+			end
 		end
 	end
 	return q, r
