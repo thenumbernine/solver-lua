@@ -6,6 +6,7 @@ local range = require 'ext.range'
 local Jacobi = require 'LinearSolvers.Jacobi'
 local ConjugateGradient = require 'LinearSolvers.ConjugateGradient'
 local ConjugateResidual = require 'LinearSolvers.ConjugateResidual'
+local GeneralizedMinimalResidual = require 'LinearSolvers.GeneralizedMinimalResidual'
 
 local vec = class()
 
@@ -141,6 +142,9 @@ for _,problemInfo in ipairs{
 			name = '-cr',
 			solver = ConjugateResidual,
 		},
+		{
+			name = '-gm',
+			solver = GeneralizedMinimalResidual,
 	} do
 		--[[
 		preconditioners:
