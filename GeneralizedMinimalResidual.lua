@@ -1,26 +1,5 @@
 local HouseholderQR = require 'LinearSolvers.HouseholderQR'
-
--- solves for x in the system y = u x for upper triangular matrix u
-local function backSubstituteUpperTriangular(u, y)
-	local n = #u
-	local x = {}
-	for i=n,1,-1 do
-		--[[
-		y[n] = x[n] * u[n][n]
-		y[n-1] = x[n-1] * u[n-1][n-1] + x[n] * u[n-1][n]
-		y[n-2] = x[n-2] * u[n-2][n-2] + x[n-1] * u[n-2][n-1] + x[n] * u[n-2][n]
-		y[i] = sum[j=i to n] x[j] * u[i][j]
-		y[i] = x[i] * u[i][i] + sum[j=i+1 to n] x[j] * u[i][j]
-		x[i] = (y[i] - sum[j=i+1 to n] x[j] * u[i][j]) / u[i][i]
-		--]]
-		local sum = 0
-		for j=i+1,n do
-			sum = sum + x[j] * u[i][j]
-		end
-		x[i] = y[i] - sum / u[i][i]
-	end
-	return x
-end
+local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
 
 local function updateX(x, H, s, Vt, i)
 	--local y = H(1:i,1:i) \ s(1:i)		-- and exit
@@ -102,7 +81,7 @@ return function(args)
 	local iter = 0		-- initialization
 	local flag = 0
 
-	local bnrm2 = norm(b);
+	local bnrm2 = norm(b)
 	if bnrm2 == 0 then bnrm2 = 1 end
 
 	local x = clone(args.x0 or b)
@@ -148,13 +127,10 @@ return function(args)
 
 	for iter=1,maxiter do		-- begin iteration
 		r = MInv(b - A(x))
-		Vt[i] = r / norm(r)
+		Vt[1] = r / norm(r)
 		local s = norm(r) * e1
 		for i=1,m do		-- construct orthonormal
-			local w = clone(x)
-			for j=1,n do
-				w[j] = MInv(A(Vt[i]))		-- basis using Gram-Schmidt
-			end
+			local w = MInv(A(Vt[i]))		-- construct orthonormal basis using Gram-Schmidt
 			for k=1,i do
 				H[k][i] = dot(w, Vt[k])
 				w = w - H[k][i] * Vt[k]
@@ -173,7 +149,7 @@ return function(args)
 			H[i][i] = cs[i] * H[i][i] + sn[i] * H[i+1][i]
 			H[i+1][i] = 0
 			
-			local err = abs(s[i+1]) / bnrm2
+			local err = math.abs(s[i+1]) / bnrm2
 			if errorCallback and errorCallback(err, iter) then return x end
 			if err < epsilon then	-- update approximation
 				updateX(x, H, s, Vt, i)
@@ -183,8 +159,9 @@ return function(args)
 		updateX(x, H, s, Vt, m)
 	
 		r = MInv(b - A(x))		-- compute residual
-		s[i+1] = norm(r)
-		local err = s[i+1] / bnrm2		-- check convergence
+		s[m+1] = norm(r)
+		local err = s[m+1] / bnrm2		-- check convergence
 		if err < epsilon then return x end
 	end
+	return x
 end

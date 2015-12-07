@@ -54,6 +54,11 @@ function vec.__sub(a,b)
 	return a + -b
 end
 
+function vec.__div(a,b)
+	assert(type(b) == 'number')
+	return vec(table.map(a, function(ai) return ai / b end))
+end
+
 function vec.dot(a,b)
 	local na = #a
 	local nb = #b
@@ -145,6 +150,7 @@ for _,problemInfo in ipairs{
 		{
 			name = '-gm',
 			solver = GeneralizedMinimalResidual,
+		},
 	} do
 		--[[
 		preconditioners:
