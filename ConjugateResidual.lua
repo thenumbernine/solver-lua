@@ -28,11 +28,14 @@ return function(args)
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
+	
+	local bNorm = dot(b,b)
+	if bNorm == 0 then bNorm = 1 end
 
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
 
-	local err = dot(r, r)
+	local err = dot(r, r) / bNorm
 	if errorCallback and errorCallback(err, 0) then return x end
 	if err < epsilon then return x end
 	
@@ -48,7 +51,7 @@ return function(args)
 		local nrAr = dot(nr, nAr)
 		local beta = nrAr / rAr
 	
-		local err = dot(nr, nr)
+		local err = dot(nr, nr) / bNorm
 		if errorCallback and errorCallback(err, iter) then break end
 		if err < epsilon then break end
 

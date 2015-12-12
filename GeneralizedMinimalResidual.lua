@@ -1,7 +1,20 @@
 local HouseholderQR = require 'LinearSolvers.HouseholderQR'
 local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
 
-local function updateX(x, H, s, Vt, i)
+local function defaultLinearSolver(A,x)
+	local q, r = HouseholderQR(A, x)	
+	local qTsubS = {}
+	for j=1,#x do
+		local sum = 0
+		for k=1,#x do
+			sum = sum + q[k][j] * x[k]
+		end
+		qTsubS[j] = sum
+	end
+	return backSubstituteUpperTriangular(r, qTsubS)
+end
+
+local function updateX(x, H, s, Vt, i, linearSolver)
 	--local y = H(1:i,1:i) \ s(1:i)		-- and exit
 	local subH = {}
 	local subS = {}
@@ -12,19 +25,7 @@ local function updateX(x, H, s, Vt, i)
 			subH[j][k] = H[j][k]
 		end
 	end
-	local q,r = HouseholderQR(subH, subS)	
-	-- H y = s
-	-- qr y = s
-	-- r y = q^-1 s = q^t s
-	local qTsubS = {}
-	for j=1,i do
-		local sum = 0
-		for k=1,i do
-			sum = sum + q[k][j] * s[k]
-		end
-		qTsubS[j] = sum
-	end
-	local y = backSubstituteUpperTriangular(r, qTsubS)
+	local y = linearSolver(subH, subS)
 
 	--x = x + V(:,1:i)*y
 	for j=1,i do
@@ -62,7 +63,7 @@ args:
 	maxiter (optional) = maximum iterations to run
 	restart (optional) = maximum iterations between restarts
 
-vectors need operators + - * / []
+vectors need operators + - * / # []
 
 --]]
 return function(args)
@@ -72,14 +73,12 @@ return function(args)
 	local dot = assert(args.dot)
 	local MInv = args.MInv or clone
 	local errorCallback = args.errorCallback
-	local epsilon = args.epsilon or 1e-50
+	local epsilon = args.epsilon or 1e-20
 	local maxiter = args.maxiter or 100
-	local restart = args.restart or 100
-
+	local restart = args.restart or #args.b
+	local linearSolver = args.linearSolver or defaultLinearSolver
+	
 	local function norm(x) return dot(x,x) end
-
-	local iter = 0		-- initialization
-	local flag = 0
 
 	local bnrm2 = norm(b)
 	if bnrm2 == 0 then bnrm2 = 1 end
@@ -87,6 +86,7 @@ return function(args)
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
 	local err = norm(r) / bnrm2
+	
 	if errorCallback and errorCallback(err, 0) then return x end
 	if err < epsilon then return end
 
@@ -152,11 +152,11 @@ return function(args)
 			local err = math.abs(s[i+1]) / bnrm2
 			if errorCallback and errorCallback(err, iter) then return x end
 			if err < epsilon then	-- update approximation
-				updateX(x, H, s, Vt, i)
+				updateX(x, H, s, Vt, i, linearSolver)
 				return x
 			end
 		end
-		updateX(x, H, s, Vt, m)
+		updateX(x, H, s, Vt, m, linearSolver)
 	
 		r = MInv(b - A(x))		-- compute residual
 		s[m+1] = norm(r)

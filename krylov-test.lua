@@ -199,8 +199,12 @@ for _,problemInfo in ipairs{
 				clone = vec,
 				norm = vec.norm,
 				dot = vec.dot,
+				-- used for gmres
+				restart = 200,
+				-- used for preconditioners
 				MInv = fMInv,
 				MInvT = fMInvT,
+				-- used for jacobi
 				scale = function(a,b)
 					local c = vec(a)
 					for i=1,#c do
