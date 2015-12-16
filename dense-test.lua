@@ -5,6 +5,36 @@ local matrix = require 'matrix'
 local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
 local forwardSubstituteLowerTriangular = require 'LinearSolvers.forwardSubstituteLowerTriangular'
 
+
+-- forward substitute test
+local errs = table()
+for n=1,10 do
+	for trial=1,10 do
+		local a = matrix.lambda({n,n}, function(i,j) return i<j and 0 or math.random(10) - 5 end)
+		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
+		local x = matrix(forwardSubstituteLowerTriangular(a, y))
+		local y_ = a * x
+		local err = (y - y_):norm()
+		errs:insert(err)
+	end
+end
+print('forwardSubstituteLowerTriangular','err',(errs:sup()))
+
+-- back substitute test
+local errs = table()
+for n=1,10 do
+	for trial=1,10 do
+		local a = matrix.lambda({n,n}, function(i,j) return i>j and 0 or math.random(10) - 5 end)
+		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
+		local x = matrix(backSubstituteUpperTriangular(a, y))
+		local y_ = a * x
+		local err = (y - y_):norm() 
+		errs:insert(err)
+	end
+end
+print('backSubstituteUpperTriangular','err',(errs:sup()))
+
+
 local function rebuildQR(q, r)
 	return matrix(q) * matrix(r)
 end
@@ -27,14 +57,15 @@ local function solveLinearQR(y, q, r)
 end
 
 --[[
-l (u p x) = y
-u (p x) = (l^-1 y)
-x = p^t u^-1 l^-1 y
+pt l u x = y
+l u x = p y
+ux = l^-1 p y
+x = u^-1 l^-1 p y
 --]]
 local function solveLinearLUP(y, l, u, p)
-	local lInvY = forwardSubstituteLowerTriangular(l, y)
-	local px = backSubstituteUpperTriangular(u, lInvY)
-	return matrix(p):transpose() * matrix(px)
+	local py = matrix(p) * matrix(y)
+	local ux = forwardSubstituteLowerTriangular(l, py)
+	return backSubstituteUpperTriangular(u, ux)
 end
 
 local errs = table()
