@@ -1,36 +1,20 @@
-local HouseholderQR = require 'LinearSolvers.HouseholderQR'
 local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
 
-local function defaultLinearSolver(A,x)
-	local q, r = HouseholderQR(A, x)	
-	local qTsubS = {}
-	for j=1,#x do
-		local sum = 0
-		for k=1,#x do
-			sum = sum + q[k][j] * x[k]
-		end
-		qTsubS[j] = sum
-	end
-	return backSubstituteUpperTriangular(r, qTsubS)
-end
-
-local function updateX(x, H, s, Vt, i, linearSolver)
-	--local y = H(1:i,1:i) \ s(1:i)		-- and exit
+local function updateX(x, h, s, v, i)
+	--local y = h(1:i,1:i) \ s(1:i)		-- and exit
 	local subH = {}
 	local subS = {}
 	for j=1,i do
 		subS[j] = s[j]
 		subH[j] = {}
-		for k=1,i do
-			subH[j][k] = H[j][k]
-		end
 	end
-	local y = linearSolver(subH, subS)
+	local y = backSubstituteUpperTriangular(subH, subS)
 
 	--x = x + V(:,1:i)*y
 	for j=1,i do
-		x = x + Vt[j] * y[j]
+		x = x + v[j] * y[j]
 	end
+	return x
 end
 
 -- http://www.mathworks.com/matlabcentral/fileexchange/2158-templates-for-the-solution-of-linear-systems/content/templates/rotmat.m
@@ -57,6 +41,7 @@ args:
 	x0 (optional) = initial guess vector
 	clone = vector clone function
 	dot = vector dot function
+	norm = (optional) vector norm. deault L2 norm via dot()
 	MInv = inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional) = accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional) = error threshold at which to stop
@@ -71,96 +56,94 @@ return function(args)
 	local b = assert(args.b)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
+	local norm = args.norm or function(x) return math.sqrt(dot(x,x)) end
 	local MInv = args.MInv or clone
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-20
 	local maxiter = args.maxiter or 100
-	local restart = args.restart or #args.b
-	local linearSolver = args.linearSolver or defaultLinearSolver
+	local m = args.restart or #args.b
+
+	local bNorm = norm(b)
+	if bNorm < 1e-10 then bNorm = 1 end
 	
-	local function norm(x) return dot(x,x) end
-
-	local bnrm2 = norm(b)
-	if bnrm2 == 0 then bnrm2 = 1 end
-
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
-	local err = norm(r) / bnrm2
+	local rNorm = norm(r)
+	local err = rNorm / bNorm
 	
 	if errorCallback and errorCallback(err, 0) then return x end
-	if err < epsilon then return end
+	if err < epsilon then return x end
 
-	local n = #x		-- initialize workspace
-	local m = restart
-
-	local Vt = {}
+	local v = {}	--v[m+1][n]
 	for i=1,m+1 do
-		Vt[i] = clone(x)
-		for j=1,n do
-			Vt[i][j] = 0
-		end
+		v[i] = {}
 	end
 
-	local H = {}
+	local h = {}	--h[m+1][m]
 	for i=1,m+1 do
-		H[i] = {}
+		h[i] = {}
 		for j=1,m do
-			H[i][j] = 0
+			h[i][j] = 0
 		end
 	end
-	
-	local cs = {}
+
+	local cs = {}	--cs[m]
 	for i=1,m do
 		cs[i] = 0
 	end
 	
-	local sn = {}
+	local sn = {}	--sn[m]
 	for i=1,m do
 		sn[i] = 0
 	end
 
-	local e1 = clone(x)
-	e1[1] = 1
-	for i=2,n do
-		e1[i] = 0
-	end
+	local s = {}	--s[m]
+	
+	local iter = 0
+	while true do
+		iter = iter + 1
+		if iter >= maxiter then break end
 
-	for iter=1,maxiter do		-- begin iteration
-		r = MInv(b - A(x))
-		Vt[1] = r / norm(r)
-		local s = norm(r) * e1
-		for i=1,m do		-- construct orthonormal
-			local w = MInv(A(Vt[i]))		-- construct orthonormal basis using Gram-Schmidt
-			for k=1,i do
-				H[k][i] = dot(w, Vt[k])
-				w = w - H[k][i] * Vt[k]
-			end
-			H[i+1][i] = norm(w)
-			Vt[i+1] = w / H[i+1][i]
-			for k=1,i-1 do	-- apply Givens rotation
-				local temp = cs[k] * H[k][i] + sn[k] * H[k+1][i]
-				H[k+1][i] = -sn[k] * H[k][i] + cs[k] * H[k+1][i]
-				H[k][i]	= temp
-			end
-			cs[i], sn[i] = rotmat(H[i][i], H[i+1][i]) -- form i-th rotation matrix
-			temp = cs[i] * s[i]		-- approximate residual norm
-			s[i+1] = -sn[i] * s[i]
-			s[i] = temp
-			H[i][i] = cs[i] * H[i][i] + sn[i] * H[i+1][i]
-			H[i+1][i] = 0
+		v[1] = r/rNorm
+		for i=2,m+1 do
+			s[i] = 0
+		end
+		s[1] = rNorm
+
+		for i=1,m do		-- construct orthonormal basis using Gram-Schmidt
+			iter = iter + 1
+			if iter >= maxiter then break end
 			
-			local err = math.abs(s[i+1]) / bnrm2
+			local w = MInv(A(v[i]))
+			for k=1,i do
+				h[k][i] = dot(w, v[k])
+				w = w - h[k][i] * v[k]
+			end
+			h[i+1][i] = norm(w)
+			v[i+1] = w / h[i+1][i]
+			for k=1,i-1 do	-- apply Givens rotation
+				h[k][i], h[k+1][i] =
+					cs[k] * h[k][i] + sn[k] * h[k+1][i],
+					-sn[k] * h[k][i] + cs[k] * h[k+1][i]
+			end
+			cs[i], sn[i] = rotmat(h[i][i], h[i+1][i]) -- form i-th rotation matrix
+			s[i], s[i+1] = cs[i] * s[i], -sn[i] * s[i]	-- approximate residual norm
+			h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
+			h[i+1][i] = 0
+			
+			local err = math.abs(s[i+1]) / bNorm
 			if errorCallback and errorCallback(err, iter) then return x end
 			if err < epsilon then	-- update approximation
-				updateX(x, H, s, Vt, i, linearSolver)
+				x = updateX(x, h, s, v, i)
 				return x
 			end
 		end
-		updateX(x, H, s, Vt, m, linearSolver)
+		x = updateX(x, h, s, v, m)
 	
 		r = MInv(b - A(x))		-- compute residual
-		s[m+1] = norm(r)
-		local err = s[m+1] / bnrm2		-- check convergence
+		rNorm = norm(r)
+		s[m+1] = rNorm
+		local err = s[m+1] / bNorm		-- check convergence
 		if err < epsilon then return x end
 	end
 	return x

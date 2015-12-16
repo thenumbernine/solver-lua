@@ -114,7 +114,7 @@ for _,problemInfo in ipairs{
 	{name='prob2', A={{1,2},{3,4}}, b={5,6}},
 	{name='prob3', A={{1,2,3},{4,5,6},{7,8,9}}, b={100,200,300}},
 	{name='prob4', A={{1,1},{2,1}}, b={2,0}},
-	
+--[[	
 	(function()
 		local n = 16
 		local A = {}
@@ -133,6 +133,7 @@ for _,problemInfo in ipairs{
 		end
 		return {name='prob5', A=A, b=b}
 	end)(),
+--]]
 } do
 	for _,solverInfo in ipairs{
 		{
@@ -200,7 +201,7 @@ for _,problemInfo in ipairs{
 				norm = vec.norm,
 				dot = vec.dot,
 				-- used for gmres
-				restart = 200,
+				restart = #b,
 				-- used for preconditioners
 				MInv = fMInv,
 				MInvT = fMInvT,
