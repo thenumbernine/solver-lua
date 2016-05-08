@@ -42,7 +42,7 @@ args:
 	clone = vector clone function
 	dot = vector dot function
 	norm = (optional) vector norm. deault L2 norm via dot()
-	MInv = inverse of preconditioner linear function MInv : x -> x
+	MInv = (optional) inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional) = accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional) = error threshold at which to stop
 	maxiter (optional) = maximum iterations to run

@@ -46,25 +46,25 @@ local function rebuildLUP(l,u,p)
 end
 
 --[[
-solve a x = y for x
+solve a x = b for x
 let a = q r 
-q r x = y
-r x = q^t y
+q r x = b
+r x = q^t b
 --]]
-local function solveLinearQR(y, q, r)
-	local qty = matrix(q):transpose() * matrix(y)
-	return backSubstituteUpperTriangular(r, qty)
+local function solveLinearQR(b, q, r)
+	local qtb = matrix(q):transpose() * matrix(b)
+	return backSubstituteUpperTriangular(r, qtb)
 end
 
 --[[
-pt l u x = y
-l u x = p y
-ux = l^-1 p y
-x = u^-1 l^-1 p y
+pt l u x = b
+l u x = p b
+ux = l^-1 p b
+x = u^-1 l^-1 p b
 --]]
-local function solveLinearLUP(y, l, u, p)
-	local py = matrix(p) * matrix(y)
-	local ux = forwardSubstituteLowerTriangular(l, py)
+local function solveLinearLUP(b, l, u, p)
+	local pb = matrix(p) * matrix(b)
+	local ux = forwardSubstituteLowerTriangular(l, pb)
 	return backSubstituteUpperTriangular(u, ux)
 end
 
