@@ -2,14 +2,12 @@ local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpper
 
 local function updateX(x, h, s, v, i)
 	--local y = h(1:i,1:i) \ s(1:i)		-- and exit
+	local subS = {table.unpack(s,1,i)}
 	local subH = {}
-	local subS = {}
 	for j=1,i do
-		subS[j] = s[j]
-		subH[j] = {}
+		subH[j] = {table.unpack(h[j], 1, i)}
 	end
 	local y = backSubstituteUpperTriangular(subH, subS)
-
 	--x = x + V(:,1:i)*y
 	for j=1,i do
 		x = x + v[j] * y[j]
