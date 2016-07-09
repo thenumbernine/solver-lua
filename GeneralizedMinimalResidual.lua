@@ -1,3 +1,5 @@
+local table = require 'ext.table'
+
 local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
 
 local function updateX(x, h, s, v, i)
@@ -46,7 +48,8 @@ args:
 	maxiter (optional) = maximum iterations to run
 	restart (optional) = maximum iterations between restarts
 
-vectors need operators + - * / # []
+vectors need operators + - scalar* scalar/ # []
+
 
 --]]
 return function(args)
@@ -69,7 +72,7 @@ return function(args)
 	local rNorm = norm(r)
 	local err = rNorm / bNorm
 	
-	if errorCallback and errorCallback(err, 0) then return x end
+	if errorCallback and errorCallback(err, 0, x) then return x end
 	if err < epsilon then return x end
 
 	local v = {}	--v[m+1][n]
@@ -115,7 +118,7 @@ return function(args)
 			local w = MInv(A(v[i]))
 			for k=1,i do
 				h[k][i] = dot(w, v[k])
-				w = w - h[k][i] * v[k]
+				w = w - v[k] * h[k][i]
 			end
 			h[i+1][i] = norm(w)
 			v[i+1] = w / h[i+1][i]
@@ -130,7 +133,7 @@ return function(args)
 			h[i+1][i] = 0
 			
 			local err = math.abs(s[i+1]) / bNorm
-			if errorCallback and errorCallback(err, iter) then return x end
+			if errorCallback and errorCallback(err, iter, x) then return x end
 			if err < epsilon then	-- update approximation
 				x = updateX(x, h, s, v, i)
 				return x
