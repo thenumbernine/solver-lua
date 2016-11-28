@@ -27,7 +27,7 @@ return function(args)
 	local x = clone(args.x or b)
 	for iter=1,maxiter do
 		local nx = b - A(x)
-		nx = nx + scale(ADiag, x)	-- remove diagonal
+		nx = nx + scale(ADiag, x)		-- remove diagonal
 		nx = invScale(nx, ADiag)		-- divide by diagonal
 		local r = b - A(nx)
 		local r2 = dot(r, r)
