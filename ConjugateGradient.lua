@@ -10,6 +10,8 @@ args:
 	errorCallback (optional)
 	epsilon (optional)
 	maxiter (optional)
+
+b and x0 and A() use __sub, __add, __mul
 --]]
 return function(args)
 	local A = assert(args.A)
