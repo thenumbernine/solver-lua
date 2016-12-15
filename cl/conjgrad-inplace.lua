@@ -29,19 +29,19 @@ local function conjGradInPlace(args)
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
-
+	
 	local copy = assert(args.copy)
 	local new = assert(args.new)
 	local free = args.free
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
-
+	
 	local x = args.x
 	if not x then
 		x = new()
 		copy(x, b)
 	end
-
+	
 	local r = new()
 	local p = new()
 	local Ap = new()
@@ -49,7 +49,6 @@ local function conjGradInPlace(args)
 
 	local bNorm = dot(b,b)
 	if bNorm == 0 then bNorm = 1 end
-
 	A(r, x)
 	mulAdd(r, b, r, -1)
 	
@@ -64,7 +63,8 @@ local function conjGradInPlace(args)
 		copy(p, MInvR)
 		for iter=1,maxiter do
 			A(Ap, p)
-			local alpha = rDotMInvR / dot(p, Ap)
+			local pDotAp = dot(p, Ap)
+			local alpha = rDotMInvR / pDotAp
 			mulAdd(x, x, p, alpha)
 			mulAdd(r, r, Ap, -alpha)
 			
