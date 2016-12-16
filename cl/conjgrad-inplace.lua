@@ -1,3 +1,5 @@
+local math = require 'ext.math'	-- isfinite
+
 --[[
 This is just like the object- and operator-based ConjugateGradient.lua in the parent directory
 except it has a focus on reuing objects.
@@ -64,7 +66,9 @@ local function conjGradInPlace(args)
 	--  from r's m elements to MInvR's n elements.
 	local MInvR = MInv and new'MInvR' or r	-- n
 
-	local bNorm = dot(b,b)
+	-- here's a place where the dot operates on m, m instead of m, n
+	-- but for m >= n we still wouldn't crash, the dot would just truncate the data
+	local bNorm = dot(b,b)		-- b dot b : m, m -> 1.  
 	if bNorm == 0 then bNorm = 1 end
 	A(r, x)						-- A(x) : m
 	mulAdd(r, b, r, -1)			-- r : m
@@ -75,6 +79,7 @@ local function conjGradInPlace(args)
 	repeat
 		local err = dot(r, r) / bNorm
 		if errorCallback and errorCallback(err, 0) then break end
+		if not math.isfinite(err) then return false, "error is not finite" end
 		if err < epsilon then break end
 		
 		copy(p, MInvR)					-- p : n
@@ -90,6 +95,7 @@ local function conjGradInPlace(args)
 			
 			local err = nRDotMInvR / bNorm
 			if errorCallback and errorCallback(err, iter) then break end
+			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 			
 			local beta = nRDotMInvR / rDotMInvR

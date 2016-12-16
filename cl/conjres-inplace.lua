@@ -1,3 +1,5 @@
+local math = require 'ext.math'	-- isfinite
+
 --[[
 This is just like the object- and operator-based ConjugateResidual.lua in the parent directory
 except it has a focus on reuing objects.
@@ -48,35 +50,47 @@ local function conjResInPlace(args)
 	local Ar = new'Ar'
 	local MInvAp = MInv and new'MInvAp' or Ap
 
-	local bNorm = dot(b,b)
+	local bNorm = dot(b,b)		-- m, m -> 1
+	if not math.isfinite(bNorm) then return false, "|b| is not finite" end
 	if bNorm == 0 then bNorm = 1 end
 
-	A(r, x)		-- well this is pretty clear that r and x need to be the same dim
-	mulAdd(r, b, r, -1)
-	if MInv then MInv(r, r) end
+	A(r, x)						-- A(x) : m  
+	mulAdd(r, b, r, -1)			-- r : m
+	if MInv then MInv(r, r) end	-- MInv(r) : n
 
 	repeat
 		local err = dot(r, r) / bNorm
 		if errorCallback and errorCallback(err, 0) then break end
+		if not math.isfinite(err) then return false, "r dot r is not finite" end
 		if err < epsilon then break end
 
-		A(Ar, r)
-		local rAr = dot(r, Ar)
+		-- r should be of dim n here ... which it is at least a subset of with m >= n.
+		-- Well this is pretty clear that r and x need to be the same dim.
+		A(Ar, r)				-- A(r) : m
+		local rAr = dot(r, Ar)	-- m, m -> 1
+		if not math.isfinite(rAr) then return false, "r dot A(r) is not finite" end
 		copy(p, r)
 		A(Ap, p)
 		for iter=1,maxiter do
 			if MInv then MInv(MInvAp, Ap) end
-			local alpha = rAr / dot(Ap, MInvAp)
+			local ApDotMInvAp = dot(Ap, MInvAp)
+			if ApDotMInvAp == 0 then return false, "A(p) dot M^-1(A(p)) == 0" end 
+			local alpha = rAr / ApDotMInvAp
+			if not math.isfinite(alpha) then return false, "alpha is not finite" end
 			mulAdd(x, x, p, alpha)
 			mulAdd(r, r, MInvAp, -alpha)
 		
 			local err = dot(r, r) / bNorm
 			if errorCallback and errorCallback(err, iter) then break end
+			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 		
 			A(Ar, r)
 			local nrAr = dot(r, Ar)
+			if not math.isfinite(nrAr) then return false, "next r dot A(r) is not finite" end
+			if rAr == 0 then return false, "r dot A(r) == 0" end
 			local beta = nrAr / rAr
+			if not math.isfinite(beta) then return false, "beta is not finite" end
 
 			rAr = nrAr
 			mulAdd(p, r, p, beta)

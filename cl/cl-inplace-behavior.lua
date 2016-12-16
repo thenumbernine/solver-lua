@@ -19,9 +19,18 @@ local function inPlaceBehavior(inPlaceSolver)
 		
 		self.args = {}
 		for k,v in pairs(args) do self.args[k] = v end
-		
+
+		-- assume our buffers are cl.obj.buffers (as newBuffer is implemented)
+		-- and assume A is a cl.obj.kernel, 
+		-- so wrap A to pass along the cl.buffers to the kernel
 		local A = assert(args.A)
 		self.args.A = function(y, x) A(y.buf, x.buf) end
+
+		-- same with MInv
+		if args.MInv then
+			local MInv = args.MInv
+			self.args.MInv = function(y, x) MInv(y.buf, x.buf) end
+		end
 
 		local domain = A.domain or self.env.domain
 		local size = self.args.size or domain.volume
@@ -87,19 +96,12 @@ local function inPlaceBehavior(inPlaceSolver)
 		program:compile()
 
 		if not self.args.dot then
-			local dotBuf = self.env:buffer{
-				name = 'dotBuf',
-				size = self.domain.volume,
-				type = self.type,
-			}
-	
 			local dot = self.env:reduce{
 				size = self.domain.volume,
-				buffer = dotBuf.buf,
 				op = function(x,y) return x..' + '..y end,
 			}
 			self.args.dot = function(a,b)
-				mul(dotBuf.buf, a.buf, b.buf)
+				mul(dot.buffer, a.buf, b.buf)
 				return dot()
 			end
 		end
