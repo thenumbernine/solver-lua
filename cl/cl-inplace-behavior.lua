@@ -8,7 +8,7 @@ It creates and returns a class
 that expects an env argument
 to provide the cl.obj.env objects
 --]]
-local function clInPlaceBehavior(inPlaceSolver)
+local function inPlaceBehavior(inPlaceSolver)
 	local class = require 'ext.class'
 	local ffi = require 'ffi'
 
@@ -115,4 +115,4 @@ local function clInPlaceBehavior(inPlaceSolver)
 	return SolverCL
 end
 
-return clInPlaceBehavior
+return inPlaceBehavior

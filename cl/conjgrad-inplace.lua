@@ -20,12 +20,25 @@ args:
 
 	dot = function(a,b) returns a number of the inner product of a and b
 	mulAdd = function(y,a,b,c) y = a + b * c, for y,a,b vectors and c scalar
+
+This currently only works with square conjugate gradient solutions.
+
+To make it work for rectangular A : R^m -> R^n, m >= n,
+(m is output dimension, n is input dimension)
+you would need to take note:
+	- copy() copies n elements
+	- dot() maps R^m * R^n -> 1
+	- A and MInv map R^m -> R^n
+	- new() will allocate n for 'x', 'p', 'MInvR', and m for 'r', 'Ap'
+
+for m < n, r would be of dim m, so you couldn't eliminate all n nullspace dimensions,
+so I wouldn't imagine you could guarantee a solution.
 --]]
 local function conjGradInPlace(args)
-	local A = assert(args.A)
-	local b = assert(args.b)
+	local A = assert(args.A)	-- A : m -> n
+	local b = assert(args.b)	-- m
 	
-	local MInv = args.MInv
+	local MInv = args.MInv		-- MInv : m -> n
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
@@ -36,48 +49,53 @@ local function conjGradInPlace(args)
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
 	
-	local x = args.x
+	local x = args.x			-- n
 	if not x then
-		x = new()
-		copy(x, b)
+		x = new'x'
+		copy(x, b)				-- n
 	end
 	
-	local r = new()
-	local p = new()
-	local Ap = new()
-	local MInvR = MInv and new() or r
+	local r = new'r'			-- m
+	local p = new'p'			-- n
+	local Ap = new'Ap'			-- m
+	
+	-- if MInv is omitted then r is used directly for MInvR, since no computation is necessary.
+	-- if our problem is rectangular with m >= n then the MInvR operation can be thought of as truncation
+	--  from r's m elements to MInvR's n elements.
+	local MInvR = MInv and new'MInvR' or r	-- n
 
 	local bNorm = dot(b,b)
 	if bNorm == 0 then bNorm = 1 end
-	A(r, x)
-	mulAdd(r, b, r, -1)
+	A(r, x)						-- A(x) : m
+	mulAdd(r, b, r, -1)			-- r : m
 	
-	if MInv then MInv(MInvR, r) end
-	local rDotMInvR = dot(r, MInvR)
+	if MInv then MInv(MInvR, r) end	-- MInv(r) : n
+	local rDotMInvR = dot(r, MInvR)	-- r dot MInv(r) : m, n -> 1
 
 	repeat
 		local err = dot(r, r) / bNorm
 		if errorCallback and errorCallback(err, 0) then break end
 		if err < epsilon then break end
 		
-		copy(p, MInvR)
+		copy(p, MInvR)					-- p : n
 		for iter=1,maxiter do
-			A(Ap, p)
-			local pDotAp = dot(p, Ap)
-			local alpha = rDotMInvR / pDotAp
-			mulAdd(x, x, p, alpha)
-			mulAdd(r, r, Ap, -alpha)
+			A(Ap, p)							-- Ap : m
+			local ApDotP = dot(Ap, p)			-- A(p) dot p : m, n -> 1
+			local alpha = rDotMInvR / ApDotP
+			mulAdd(x, x, p, alpha)				-- x : n
+			mulAdd(r, r, Ap, -alpha)			-- r : m
 			
-			local err = dot(r, r) / bNorm
+			if MInv then MInv(MInvR, r) end		-- MInv(r) : n
+			local nRDotMInvR = dot(r, MInvR)	-- r dot MInv(r) : m, n -> 1
+			
+			local err = nRDotMInvR / bNorm
 			if errorCallback and errorCallback(err, iter) then break end
 			if err < epsilon then break end
 			
-			if MInv then MInv(MInvR, r) end
-			local nRDotMInvR = dot(r, MInvR)
 			local beta = nRDotMInvR / rDotMInvR
-			mulAdd(p, MInvR, p, beta)
-			
 			rDotMInvR = nRDotMInvR
+			
+			mulAdd(p, MInvR, p, beta)			-- p : n
 		end
 	until true	-- run once, use break to jump out. my stupid CS education has scarred me from ever using goto's again.
 
