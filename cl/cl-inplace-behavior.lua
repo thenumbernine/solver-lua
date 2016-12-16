@@ -36,11 +36,8 @@ local function inPlaceBehavior(inPlaceSolver)
 		-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 		self.args.maxiter = self.args.maxiter or self.domain.volume
 		
-		self.args.new = self.args.new or function() 
-			return self.env:buffer{
-				size = self.domain.volume,
-				type = self.type,
-			}
+		self.args.new = self.args.new or function(...) 
+			return self:newBuffer(...) 
 		end
 
 		-- hmm, this release, coupled with the __gc's release, makes things crash ...
@@ -106,6 +103,13 @@ local function inPlaceBehavior(inPlaceSolver)
 				return dot()
 			end
 		end
+	end
+
+	function SolverCL:newBuffer(name)
+		return self.env:buffer{
+			size = self.domain.volume,
+			type = self.type,
+		}
 	end
 
 	function SolverCL:__call()

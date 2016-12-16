@@ -28,14 +28,14 @@ To make it work for rectangular A : R^m -> R^n, m >= n,
 you would need to take note:
 	- copy() copies n elements
 	- dot() maps R^m * R^n -> 1
-	- A and MInv map R^m -> R^n
+	- A maps R^n -> R^m, MInv map R^m -> R^n
 	- new() will allocate n for 'x', 'p', 'MInvR', and m for 'r', 'Ap'
 
 for m < n, r would be of dim m, so you couldn't eliminate all n nullspace dimensions,
 so I wouldn't imagine you could guarantee a solution.
 --]]
 local function conjGradInPlace(args)
-	local A = assert(args.A)	-- A : m -> n
+	local A = assert(args.A)	-- A : n -> m
 	local b = assert(args.b)	-- m
 	
 	local MInv = args.MInv		-- MInv : m -> n

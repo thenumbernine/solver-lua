@@ -22,10 +22,10 @@ args:
 	mulAdd = function(y,a,b,c) y = a + b * c, for y,a,b vectors and c scalar
 --]]
 local function conjResInPlace(args)
-	local A = assert(args.A)
-	local b = assert(args.b)
+	local A = assert(args.A)	-- A : n -> m
+	local b = assert(args.b)	-- m
 
-	local MInv = args.MInv
+	local MInv = args.MInv		-- MInv : m -> n
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
@@ -36,22 +36,22 @@ local function conjResInPlace(args)
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
 
-	local x = args.x
+	local x = args.x			-- n
 	if not x then
-		x = new()
+		x = new'x'
 		copy(x, b)
 	end
 
-	local r = new()
-	local p = new()
-	local Ap = new()
-	local Ar = new()
-	local MInvAp = MInv and new() or Ap
+	local r = new'r'			-- m
+	local p = new'p'			-- n
+	local Ap = new'Ap'			-- m
+	local Ar = new'Ar'
+	local MInvAp = MInv and new'MInvAp' or Ap
 
 	local bNorm = dot(b,b)
 	if bNorm == 0 then bNorm = 1 end
 
-	A(r, x)
+	A(r, x)		-- well this is pretty clear that r and x need to be the same dim
 	mulAdd(r, b, r, -1)
 	if MInv then MInv(r, r) end
 
