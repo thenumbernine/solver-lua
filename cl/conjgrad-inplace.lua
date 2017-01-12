@@ -78,7 +78,7 @@ local function conjGradInPlace(args)
 
 	repeat
 		local err = dot(r, r) / bNorm
-		if errorCallback and errorCallback(err, 0) then break end
+		if errorCallback and errorCallback(err, 0, x) then break end
 		if not math.isfinite(err) then return false, "error is not finite" end
 		if err < epsilon then break end
 		
@@ -94,7 +94,7 @@ local function conjGradInPlace(args)
 			local nRDotMInvR = dot(r, MInvR)	-- r dot MInv(r) : m, n -> 1
 			
 			local err = nRDotMInvR / bNorm
-			if errorCallback and errorCallback(err, iter) then break end
+			if errorCallback and errorCallback(err, iter, x) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 			

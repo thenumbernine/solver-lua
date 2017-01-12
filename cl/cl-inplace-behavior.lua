@@ -35,7 +35,7 @@ local function inPlaceBehavior(inPlaceSolver)
 		local domain = A.domain or self.env.domain
 		local size = self.args.size or domain.volume
 		self.type = self.args.type or self.args.x.type
-	
+
 		self.domain = require 'cl.obj.domain'{
 			env = self.env,
 			size = size,
@@ -44,7 +44,7 @@ local function inPlaceBehavior(inPlaceSolver)
 	
 		-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 		self.args.maxiter = self.args.maxiter or self.domain.volume
-		
+
 		self.args.new = self.args.new or function(...) 
 			return self:newBuffer(...) 
 		end
@@ -52,7 +52,6 @@ local function inPlaceBehavior(inPlaceSolver)
 		-- hmm, this release, coupled with the __gc's release, makes things crash ...
 		-- at least I know the __gc is cleaning up correctly
 		--self.args.free = function(buffer) buffer.buf:release() end
-
 		self.args.copy = self.args.copy or function(dst, src) 
 			self.env.cmds:enqueueCopyBuffer{
 				src = src.buf,
@@ -93,6 +92,26 @@ local function inPlaceBehavior(inPlaceSolver)
 			end
 		end
 
+		if inPlaceSolver.needs
+		and inPlaceSolver.needs.scale
+		and not self.args.scale
+		then
+			local scale = program:kernel{
+				domain = self.domain,
+				argsOut = {
+					{name='y', type=self.type, buf=true},
+				},
+				argsIn = {
+					{name='a', type=self.type, buf=true},
+					{name='s', type='real'},
+				},
+				body = [[	y[index] = a[index] * s;]],
+			}
+			self.args.scale = function(y,a,s)
+				scale(y.buf, a.buf, ffi.new('real[1]', s))
+			end		
+		end
+
 		program:compile()
 
 		if not self.args.dot then
@@ -109,8 +128,9 @@ local function inPlaceBehavior(inPlaceSolver)
 
 	function SolverCL:newBuffer(name)
 		return self.env:buffer{
-			size = self.domain.volume,
+			size = assert(self.domain.volume),
 			type = self.type,
+			name = name,
 		}
 	end
 

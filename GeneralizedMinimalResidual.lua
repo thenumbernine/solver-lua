@@ -78,6 +78,9 @@ return function(args)
 	local v = {}	--v[m+1][n]
 	for i=1,m+1 do
 		v[i] = {}
+		for j=1,#b do
+			v[i][j] = 0
+		end
 	end
 
 	local h = {}	--h[m+1][m]
@@ -98,12 +101,10 @@ return function(args)
 		sn[i] = 0
 	end
 
-	local s = {}	--s[m]
+	local s = {}	--s[m+1]
 	
 	local iter = 0
 	while true do
-		iter = iter + 1
-		if iter >= maxiter then break end
 
 		v[1] = r/rNorm
 		for i=2,m+1 do
@@ -139,13 +140,15 @@ return function(args)
 				return x
 			end
 		end
+		if iter >= maxiter then break end
+		
 		x = updateX(x, h, s, v, m)
 	
 		r = MInv(b - A(x))		-- compute residual
 		rNorm = norm(r)
 		s[m+1] = rNorm
 		local err = s[m+1] / bNorm		-- check convergence
-		if err < epsilon then return x end
+		if err < epsilon then break end
 	end
 	return x
 end

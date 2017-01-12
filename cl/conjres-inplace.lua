@@ -60,7 +60,7 @@ local function conjResInPlace(args)
 
 	repeat
 		local err = dot(r, r) / bNorm
-		if errorCallback and errorCallback(err, 0) then break end
+		if errorCallback and errorCallback(err, 0, x) then break end
 		if not math.isfinite(err) then return false, "r dot r is not finite" end
 		if err < epsilon then break end
 
@@ -81,7 +81,7 @@ local function conjResInPlace(args)
 			mulAdd(r, r, MInvAp, -alpha)
 		
 			local err = dot(r, r) / bNorm
-			if errorCallback and errorCallback(err, iter) then break end
+			if errorCallback and errorCallback(err, iter, x) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 		
