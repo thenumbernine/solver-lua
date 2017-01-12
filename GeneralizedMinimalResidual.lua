@@ -50,7 +50,6 @@ args:
 
 vectors need operators + - scalar* scalar/ # []
 
-
 --]]
 return function(args)
 	local A = assert(args.A)
@@ -65,13 +64,13 @@ return function(args)
 	local m = args.restart or #args.b
 
 	local bNorm = norm(b)
-	if bNorm < 1e-10 then bNorm = 1 end
+	if bNorm == 0 then bNorm = 1 end
 	
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
 	local rNorm = norm(r)
 	local err = rNorm / bNorm
-	
+
 	if errorCallback and errorCallback(err, 0, x) then return x end
 	if err < epsilon then return x end
 
@@ -79,7 +78,7 @@ return function(args)
 	for i=1,m+1 do
 		v[i] = {}
 		for j=1,#b do
-			v[i][j] = 0
+--			v[i][j] = 0
 		end
 	end
 
