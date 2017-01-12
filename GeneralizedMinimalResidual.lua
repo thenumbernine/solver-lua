@@ -43,7 +43,8 @@ args:
 	dot = vector dot function
 	norm = (optional) vector norm. deault L2 norm via dot()
 	MInv = (optional) inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) = accepts error, iteration; returns true if iterations should be stopped
+	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+		accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional) = error threshold at which to stop
 	maxiter (optional) = maximum iterations to run
 	restart (optional) = maximum iterations between restarts
@@ -63,15 +64,14 @@ return function(args)
 	local maxiter = args.maxiter or 100
 	local m = args.restart or #args.b
 
-	local bNorm = norm(b)
-	if bNorm == 0 then bNorm = 1 end
+	local bLen = norm(b)
 	
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
-	local rNorm = norm(r)
-	local err = rNorm / bNorm
+	local rLen = norm(r)
 
-	if errorCallback and errorCallback(err, 0, x) then return x end
+	local err = bLen > 0 and rLen / bLen or rLen
+	if errorCallback and errorCallback(err, 0, x, rLen*rLen, bLen*bLen) then return x end
 	if err < epsilon then return x end
 
 	local v = {}	--v[m+1][n]
@@ -105,11 +105,11 @@ return function(args)
 	local iter = 0
 	while true do
 
-		v[1] = r/rNorm
+		v[1] = r/rLen
 		for i=2,m+1 do
 			s[i] = 0
 		end
-		s[1] = rNorm
+		s[1] = rLen
 
 		for i=1,m do		-- construct orthonormal basis using Gram-Schmidt
 			iter = iter + 1
@@ -132,8 +132,8 @@ return function(args)
 			h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 			h[i+1][i] = 0
 			
-			local err = math.abs(s[i+1]) / bNorm
-			if errorCallback and errorCallback(err, iter, x) then return x end
+			local err = math.abs(bLen > 0 and s[i+1] / bLen or s[i+1])
+			if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
 			if err < epsilon then	-- update approximation
 				x = updateX(x, h, s, v, i)
 				return x
@@ -144,9 +144,9 @@ return function(args)
 		x = updateX(x, h, s, v, m)
 	
 		r = MInv(b - A(x))		-- compute residual
-		rNorm = norm(r)
-		s[m+1] = rNorm
-		local err = s[m+1] / bNorm		-- check convergence
+		rLen = norm(r)
+		s[m+1] = rLen
+		local err = bLen > 0 and rLen / bLen or rLen		-- check convergence
 		if err < epsilon then break end
 	end
 	return x

@@ -7,7 +7,8 @@ args:
 	clone = vector clone function
 	dot = vector dot function
 	MInv = inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) = accepts error, iteration; returns true if iterations should be stopped
+	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+		accepts error, iteration; returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 
@@ -29,14 +30,14 @@ return function(args)
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
 	
-	local bNorm = dot(b,b)
-	if bNorm == 0 then bNorm = 1 end
+	local bSq = dot(b,b)
 
 	local x = clone(args.x0 or b)
 	local r = MInv(b - A(x))
 
-	local err = dot(r, r) / bNorm
-	if errorCallback and errorCallback(err, 0) then return x end
+	local rSq = dot(r, r)
+	local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
+	if errorCallback and errorCallback(err, 0, x, rSq, bSq) then return x end
 	if err < epsilon then return x end
 	
 	local Ar = A(r)
@@ -50,9 +51,10 @@ return function(args)
 		local nAr = A(nr)
 		local nrAr = dot(nr, nAr)
 		local beta = nrAr / rAr
-	
-		local err = dot(nr, nr) / bNorm
-		if errorCallback and errorCallback(err, iter) then break end
+
+		rSq = dot(nr, nr)
+		local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
+		if errorCallback and errorCallback(err, iter, x, rSq, bSq) then break end
 		if err < epsilon then break end
 
 		r = nr
