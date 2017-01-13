@@ -44,7 +44,7 @@ args:
 	norm = (optional) vector norm. deault L2 norm via dot()
 	MInv = (optional) inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
-		accepts error, iteration; returns true if iterations should be stopped
+		returns true if iterations should be stopped
 	epsilon (optional) = error threshold at which to stop
 	maxiter (optional) = maximum iterations to run
 	restart (optional) = maximum iterations between restarts
@@ -132,7 +132,7 @@ return function(args)
 			h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 			h[i+1][i] = 0
 			
-			local err = math.abs(bLen > 0 and s[i+1] / bLen or s[i+1])
+			local err = math.abs(s[i+1]) / (bLen > 0 and bLen or 1)
 			if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
 			if err < epsilon then	-- update approximation
 				x = updateX(x, h, s, v, i)
@@ -146,7 +146,7 @@ return function(args)
 		r = MInv(b - A(x))		-- compute residual
 		rLen = norm(r)
 		s[m+1] = rLen
-		local err = bLen > 0 and rLen / bLen or rLen		-- check convergence
+		local err = rLen / (bLen > 0 and bLen or 1)		-- check convergence
 		if err < epsilon then break end
 	end
 	return x

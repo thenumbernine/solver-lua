@@ -8,7 +8,7 @@ args:
 	dot = vector dot function
 	MInv = inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
-		accepts error, iteration; returns true if iterations should be stopped
+		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 

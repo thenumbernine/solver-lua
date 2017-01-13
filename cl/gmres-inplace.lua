@@ -59,7 +59,8 @@ args:
 	b = object to hold 'b' vector
 	x (optional) = object to hold 'x' vector.  initialized to 'b' if not provided.
 	MInv = (optional) function(y,x) for x ro and y rw vectors. preconditioner
-	errorCallback (optional) returns true to stop
+	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 	restart (optional) = maximum iterations between restarts
@@ -97,8 +98,7 @@ function GMResInPlace:__call(args)
 
 	local r = new'r'	--[n]
 	
-	local bNorm = dot(b,b)
-	if bNorm == 0 then bNorm = 1 end
+	local bLen = math.sqrt(dot(b,b))
 
 	-- r = M^-1 (b - A x)
 	A(r, x)
@@ -106,9 +106,9 @@ function GMResInPlace:__call(args)
 	if MInv then MInv(r, r) end
 
 	repeat	-- runs only once.  used for break.
-		local rNorm = dot(r, r)
-		local err = rNorm / bNorm
-		if errorCallback and errorCallback(err, 0, x) then break end
+		local rLen = math.sqrt(dot(r, r))
+		local err = rLen / bLen
+		if errorCallback and errorCallback(err, 0, x, rLen*rLen, bLen*bLen) then break end
 		if err < epsilon then break end
 
 		-- all these initialize to zero
@@ -132,10 +132,10 @@ function GMResInPlace:__call(args)
 		local iter = 0
 		while true do
 
-			scale(v[1], r, 1/rNorm)
+			scale(v[1], r, 1/rLen)
 		
-			-- s = [rNorm, 0, 0, ...]
-			s[1] = rNorm
+			-- s = [rLen, 0, 0, ...]
+			s[1] = rLen
 			for i=2,m+1 do
 				s[i] = 0
 			end
@@ -164,8 +164,8 @@ function GMResInPlace:__call(args)
 				h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 				h[i+1][i] = 0
 
-				local err = math.abs(s[i+1]) / bNorm
-				if errorCallback and errorCallback(err, iter, x) then return x end
+				local err = math.abs(s[i+1]) / (bLen > 0 and bLen or 1)
+				if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
 				if err < epsilon then	-- update approximation
 					updateX(x, h, s, v, i, mulAdd)
 					return x
@@ -180,9 +180,9 @@ function GMResInPlace:__call(args)
 			mulAdd(r, b, r, -1)
 			if MInv then MInv(r, r) end
 			
-			rNorm = math.sqrt(dot(r,r))
-			s[m+1] = rNorm
-			local err = s[m+1] / bNorm		-- check convergence
+			rLen = math.sqrt(dot(r,r))
+			s[m+1] = rLen
+			local err = rLen / (bLen > 0 and bLen or 1)		-- check convergence
 			if err < epsilon then break end
 		end
 

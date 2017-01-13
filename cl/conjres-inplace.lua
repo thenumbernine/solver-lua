@@ -1,4 +1,7 @@
 local math = require 'ext.math'	-- isfinite
+local class = require 'ext.class'
+
+local ConjResInPlace = class()
 
 --[[
 This is just like the object- and operator-based ConjugateResidual.lua in the parent directory
@@ -12,7 +15,8 @@ args:
 	b = object to hold 'b' vector
 	x (optional) = object to hold 'x' vector.  initialized to 'b' if not provided.
 	MInv = (optional) function(y,x) for x ro and y rw vectors. preconditioner
-	errorCallback (optional) returns true to stop
+	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 	
@@ -23,7 +27,7 @@ args:
 	dot = function(a,b) returns a number of the inner product of a and b
 	mulAdd = function(y,a,b,c) y = a + b * c, for y,a,b vectors and c scalar
 --]]
-local function conjResInPlace(args)
+function ConjResInPlace:__call(args)
 	local A = assert(args.A)	-- A : n -> m
 	local b = assert(args.b)	-- m
 
@@ -50,17 +54,17 @@ local function conjResInPlace(args)
 	local Ar = new'Ar'
 	local MInvAp = MInv and new'MInvAp' or Ap
 
-	local bNorm = dot(b,b)		-- m, m -> 1
-	if not math.isfinite(bNorm) then return false, "|b| is not finite" end
-	if bNorm == 0 then bNorm = 1 end
+	local bSq = dot(b,b)		-- m, m -> 1
+	if not math.isfinite(bSq) then return false, "|b| is not finite" end
 
 	A(r, x)						-- A(x) : m  
 	mulAdd(r, b, r, -1)			-- r : m
 	if MInv then MInv(r, r) end	-- MInv(r) : n
 
 	repeat
-		local err = dot(r, r) / bNorm
-		if errorCallback and errorCallback(err, 0, x) then break end
+		local rSq = dot(r, r)
+		local err = math.sqrt(rSq / (bSq > 0 and bSq or 1))
+		if errorCallback and errorCallback(err, 0, x, rSq, bSq) then break end
 		if not math.isfinite(err) then return false, "r dot r is not finite" end
 		if err < epsilon then break end
 
@@ -79,9 +83,10 @@ local function conjResInPlace(args)
 			if not math.isfinite(alpha) then return false, "alpha is not finite" end
 			mulAdd(x, x, p, alpha)
 			mulAdd(r, r, MInvAp, -alpha)
-		
-			local err = dot(r, r) / bNorm
-			if errorCallback and errorCallback(err, iter, x) then break end
+	
+			rSq = dot(r, r)
+			local err = math.sqrt(rSq / (bSq > 0 and bSq or 1))
+			if errorCallback and errorCallback(err, iter, x, rSq, bSq) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 		
@@ -110,4 +115,4 @@ local function conjResInPlace(args)
 	return x
 end
 
-return conjResInPlace
+return ConjResInPlace()
