@@ -3,10 +3,10 @@ local class = require 'ext.class'
 local table = require 'ext.table'
 local file = require 'ext.file'
 local range = require 'ext.range'
-local Jacobi = require 'LinearSolvers.Jacobi'
-local ConjugateGradient = require 'LinearSolvers.ConjugateGradient'
-local ConjugateResidual = require 'LinearSolvers.ConjugateResidual'
-local GeneralizedMinimalResidual = require 'LinearSolvers.GeneralizedMinimalResidual'
+local jacobi = require 'solver.jacobi'
+local conjgrad = require 'solver.conjgrad'
+local conjres = require 'solver.conjres'
+local gmres = require 'solver.gmres'
 
 local vec = class()
 
@@ -138,19 +138,19 @@ for _,problemInfo in ipairs{
 	for _,solverInfo in ipairs{
 		{
 			name = '-jacobi',
-			solver = Jacobi,
+			solver = jacobi,
 		},
 		{
-			name = '-cg',
-			solver = ConjugateGradient,
+			name = '-conjgrad',
+			solver = conjgrad,
 		},
 		{
-			name = '-cr',
-			solver = ConjugateResidual,
+			name = '-conjres',
+			solver = conjres,
 		},
 		{
-			name = '-gm',
-			solver = GeneralizedMinimalResidual,
+			name = '-gmres',
+			solver = gmres,
 		},
 	} do
 		--[[

@@ -1,3 +1,3 @@
-return require 'LinearSolvers.cl.cl-inplace-behavior'(
-	require 'LinearSolvers.cl.gmres-inplace'
+return require 'solver.cl.inplace-behavior'(
+	require 'solver.cl.gmres-inplace'
 )

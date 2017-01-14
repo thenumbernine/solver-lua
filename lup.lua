@@ -4,7 +4,7 @@ Algorithm 10.1 from Trefethen and Bau "Numerical Linear Algebra"
 input:
 	a = m x m table of numbers
 output:
-	q, r decomposition
+	l,u,p decomposition
 --]]
 local unpack = unpack or table.unpack
 return function(a)

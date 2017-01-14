@@ -4,7 +4,7 @@ args:
 	A = linear function A : x -> x
 	AT = transpose of A
 	b = solution vector
-	x0 (optional) = initial guess
+	x (optional) = initial guess
 	clone = vector clone
 	dot = vector dot
 	MInv = inverse of preconditioner linear function MInv : x -> x
@@ -27,7 +27,7 @@ return function(args)
 	local maxiter = 10000
 
 	b = clone(b)
-	local x = clone(args.x0 or b)
+	local x = clone(args.x or b)
 	local xStar = clone(x)
 	local r = b - A(x)
 	local MInvR = MInv(r)

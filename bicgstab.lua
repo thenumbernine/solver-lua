@@ -4,7 +4,7 @@ args:
 	A = linear function A : x -> x
 	AT = transpose of A
 	b = solution vector
-	x0 (optional) = initial guess, default to b
+	x (optional) = initial guess, default to b
 	rHat (optional) = alternative r, should be r dot rHat ~= 0, defaults to r
 	zero = zero vector
 	clone = vector clone function
@@ -26,7 +26,7 @@ return function(args)
 	local zero = assert(args.zero)
 
 	local b = clone(assert(args.b))
-	local x = clone(args.x0 or b)
+	local x = clone(args.x or b)
 	local xStar = clone(x)
 	local r = b - A(x)
 

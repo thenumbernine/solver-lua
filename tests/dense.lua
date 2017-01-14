@@ -2,8 +2,8 @@
 local range = require 'ext.range'
 local table = require 'ext.table'
 local matrix = require 'matrix'
-local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
-local forwardSubstituteLowerTriangular = require 'LinearSolvers.forwardSubstituteLowerTriangular'
+local backsub = require 'solver.backsub'
+local fwdsub = require 'solver.fwdsub'
 
 
 -- forward substitute test
@@ -12,13 +12,13 @@ for n=1,10 do
 	for trial=1,10 do
 		local a = matrix.lambda({n,n}, function(i,j) return i<j and 0 or math.random(10) - 5 end)
 		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
-		local x = matrix(forwardSubstituteLowerTriangular(a, y))
+		local x = matrix(fwdsub(a, y))
 		local y_ = a * x
 		local err = (y - y_):norm()
 		errs:insert(err)
 	end
 end
-print('forwardSubstituteLowerTriangular','err',(errs:sup()))
+print('fwdsub','err',(errs:sup()))
 
 -- back substitute test
 local errs = table()
@@ -26,13 +26,13 @@ for n=1,10 do
 	for trial=1,10 do
 		local a = matrix.lambda({n,n}, function(i,j) return i>j and 0 or math.random(10) - 5 end)
 		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
-		local x = matrix(backSubstituteUpperTriangular(a, y))
+		local x = matrix(backsub(a, y))
 		local y_ = a * x
 		local err = (y - y_):norm() 
 		errs:insert(err)
 	end
 end
-print('backSubstituteUpperTriangular','err',(errs:sup()))
+print('backsub','err',(errs:sup()))
 
 
 local function rebuildQR(q, r)
@@ -53,7 +53,7 @@ r x = q^t b
 --]]
 local function solveLinearQR(b, q, r)
 	local qtb = matrix(q):transpose() * matrix(b)
-	return backSubstituteUpperTriangular(r, qtb)
+	return backsub(r, qtb)
 end
 
 --[[
@@ -64,8 +64,8 @@ x = u^-1 l^-1 p b
 --]]
 local function solveLinearLUP(b, l, u, p)
 	local pb = matrix(p) * matrix(b)
-	local ux = forwardSubstituteLowerTriangular(l, pb)
-	return backSubstituteUpperTriangular(u, ux)
+	local ux = fwdsub(l, pb)
+	return backsub(u, ux)
 end
 
 local errs = table()
@@ -73,11 +73,11 @@ for n=1,5 do
 	for m=n,n do	-- LU requires square, the others require m>=n for mxn matrices
 		local a = matrix.lambda({m,n},function(i,j) return math.random() end)
 		for _,solverInfo in ipairs{
-			{name='GramSchmidt', solver=require 'LinearSolvers.GramSchmidt', rebuild=rebuildQR, solveLinear=solveLinearQR},
-			{name='GramSchmidtClassical', solver=require 'LinearSolvers.GramSchmidtClassical', rebuild=rebuildQR, solveLinear=solveLinearQR},
-			{name='HouseholderQR', solver=require 'LinearSolvers.HouseholderQR', rebuild=rebuildQR, solveLinear=solveLinearQR},
-			--{name='LUDecomposition', solver=require 'LinearSolvers.LUDecomposition', rebuild=rebuildLU, solveLinear=solveLinearLU},
-			{name='LUPDecomposition', solver=require 'LinearSolvers.LUPDecomposition', rebuild=rebuildLUP, solveLinear=solveLinearLUP},
+			{name='qr_gramschmidt', solver=require 'solver.qr_gramschmidt', rebuild=rebuildQR, solveLinear=solveLinearQR},
+			{name='qr_gramschmidt_classic', solver=require 'solver.qr_gramschmidt_classic', rebuild=rebuildQR, solveLinear=solveLinearQR},
+			{name='qr_householder', solver=require 'solver.qr_householder', rebuild=rebuildQR, solveLinear=solveLinearQR},
+			--{name='lu', solver=require 'solver.lu', rebuild=rebuildLU, solveLinear=solveLinearLU},
+			{name='lup', solver=require 'solver.lup', rebuild=rebuildLUP, solveLinear=solveLinearLUP},
 		} do
 			for _,test in ipairs{
 				{

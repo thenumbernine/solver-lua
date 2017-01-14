@@ -1,6 +1,6 @@
 local table = require 'ext.table'
 
-local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
+local backsub = require 'solver.backsub'
 
 local function updateX(x, h, s, v, i)
 	--local y = h(1:i,1:i) \ s(1:i)		-- and exit
@@ -9,7 +9,7 @@ local function updateX(x, h, s, v, i)
 	for j=1,i do
 		subH[j] = {table.unpack(h[j], 1, i)}
 	end
-	local y = backSubstituteUpperTriangular(subH, subS)
+	local y = backsub(subH, subS)
 	--x = x + V(:,1:i)*y
 	for j=1,i do
 		x = x + v[j] * y[j]
@@ -38,7 +38,7 @@ source: https://en.wikipedia.org/wiki/Generalized_minimal_residual_method
 args:
 	A = linear function A : x -> x
 	b = solution vector
-	x0 (optional) = initial guess vector
+	x (optional) = initial guess vector
 	clone = vector clone function
 	dot = vector dot function
 	norm = (optional) vector norm. deault L2 norm via dot()
@@ -66,7 +66,7 @@ return function(args)
 
 	local bLen = norm(b)
 	
-	local x = clone(args.x0 or b)
+	local x = clone(args.x or b)
 	local r = MInv(b - A(x))
 	local rLen = norm(r)
 

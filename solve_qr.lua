@@ -1,5 +1,5 @@
-local HouseholderQR = require 'LinearSolvers.HouseholderQR'
-local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
+local qr_householder = require 'solver.qr_householder'
+local backsub = require 'solver.backsub'
 
 --[[
 solve a x = b for x
@@ -13,7 +13,7 @@ q r x = b
 r x = q^t b
 --]]
 return function(a, b, solver)
-	solver = solver or HouseholderQR
+	solver = solver or qr_householder
 	local q, r = solver(a)
 	-- qtb = q^t * b 
 	local m = #q[1]
@@ -26,5 +26,5 @@ return function(a, b, solver)
 		end
 		qtb[i] = sum
 	end
-	return backSubstituteUpperTriangular(r, qtb)
+	return backsub(r, qtb)
 end

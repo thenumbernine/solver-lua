@@ -3,7 +3,7 @@ local table = require 'ext.table'
 local range = require 'ext.range'
 
 -- hmm, I should gpu-ize this too ...
-local backSubstituteUpperTriangular = require 'LinearSolvers.backSubstituteUpperTriangular'
+local backsub = require 'solver.backsub'
 
 -- x = CL buffer
 -- h = [m+1][m] Lua table
@@ -17,7 +17,7 @@ local function updateX(x, h, s, v, i, mulAdd)
 	for j=1,i do
 		subH[j] = {table.unpack(h[j], 1, i)}
 	end
-	local y = backSubstituteUpperTriangular(subH, subS)
+	local y = backsub(subH, subS)
 	--x = x + V(:,1:i)*y
 	for j=1,i do
 		mulAdd(x, x, v[j], y[j])	
@@ -42,7 +42,7 @@ end
 
 local GMResInPlace = class()
 
--- tell the cl-inplace-behavior we need a scale kernel
+-- tell the inplace-behavior we need a scale kernel
 GMResInPlace.needs = {
 	scale = true,
 }
