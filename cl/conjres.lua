@@ -4,6 +4,10 @@ local CLSolver = require 'solver.cl.solver'
 
 local CLConjRes = class(CLSolver)
 
+CLConjRes.needs = {
+	A = true,
+}
+
 --[[
 This is just like the object- and operator-based ConjugateResidual.lua in the parent directory
 except it has a focus on reuing objects.

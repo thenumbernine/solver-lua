@@ -44,6 +44,7 @@ local CLGMRes = class(CLSolver)
 
 -- tell the inplace-behavior we need a scale kernel
 CLGMRes.needs = {
+	A = true,
 	scale = true,
 }
 

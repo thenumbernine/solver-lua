@@ -1,5 +1,14 @@
+local class = require 'ext.class'
 local table = require 'ext.table'
-local GMRes = require 'solver.cl.gmres'
+local CLGMRes = require 'solver.cl.gmres'
+local CLSolver = require 'solver.cl.solver'
+
+local CLJFNK = class(CLSolver)
+
+CLJFNK.needs = {
+	f = true,
+	scale = true,
+}
 
 --[[
 performs update of iteration x[n+1] = x[n] - (dF/dx)^-1 F(x[n])
@@ -24,7 +33,9 @@ args:
 	mulAdd
 	scale
 --]]
-local function jfnk(args)
+function CLJFNK:__call()
+	local args = self.args
+
 	local f = assert(args.f)
 	local x = assert(args.x)
 	local dx = args.dx or x
@@ -50,11 +61,13 @@ local function jfnk(args)
 	local f_of_x_minus_dx = new'f_of_x_minus_dx'
 
 	local cache = {}
-	local gmres = GMRes(table({
+	local gmres = CLGMRes(table({
 		-- allow args.gmres to overwrite these
+		env = self.env,
 		dot = dot,
 		mulAdd = mulAdd,
 		scale = scale,
+		copy = args.copy,
 	}, args.gmres, {
 		-- these overwrite args.gmres
 		new = function(name)
@@ -149,4 +162,4 @@ local function jfnk(args)
 	return x
 end
 
-return jfnk
+return CLJFNK

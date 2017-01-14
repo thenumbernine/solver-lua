@@ -37,11 +37,20 @@ function CLSolver:init(args)
 	self.args = {}
 	for k,v in pairs(args) do self.args[k] = v end
 
+	-- only in conjgrad, conjres, gmres:
 	-- assume our buffers are cl.obj.buffers (as newBuffer is implemented)
 	-- and assume A is a cl.obj.kernel, 
 	-- so wrap A to pass along the cl.buffers to the kernel
-	local A = assert(args.A)
-	self.args.A = function(y, x) A(y.obj, x.obj) end
+	if self.needs.A then
+		local A = assert(args.A)
+		self.args.A = function(y, x) A(y.obj, x.obj) end
+	end
+
+	-- only in jfnk:
+	if self.needs.f then
+		local f = assert(args.f)
+		self.args.f = function(y, x) f(y.obj, x.obj) end
+	end
 
 	-- same with MInv
 	if args.MInv then
@@ -49,7 +58,10 @@ function CLSolver:init(args)
 		self.args.MInv = function(y, x) MInv(y.obj, x.obj) end
 	end
 
-	local domain = A.domain or self.env.base
+	local domain = 
+		(args.A and args.A.domain)
+		or (args.f and args.f.domain)
+		or self.env.base
 	local size = self.args.size or domain.volume
 	self.type = self.args.type or self.args.x.type
 
@@ -73,21 +85,12 @@ function CLSolver:init(args)
 		}
 	end
 
-	local program = self.env:program()
-
-	local mul = program:kernel{
-		domain = self.domain,
-		argsOut = {
-			{name='y', type=self.type, obj=true},
-		},
-		argsIn = {
-			{name='a', type=self.type, obj=true},
-			{name='b', type=self.type, obj=true},
-		},
-		body = [[	y[index] = a[index] * b[index];]],
-	}
-
+	local program
+	local function makeProgram()
+		program = program or self.env:program()
+	end
 	if not self.args.mulAdd then
+		makeProgram()
 		local mulAdd = program:kernel{
 			domain = self.domain,
 			argsOut = {
@@ -109,6 +112,7 @@ function CLSolver:init(args)
 	and self.needs.scale
 	and not self.args.scale
 	then
+		makeProgram()
 		local scale = program:kernel{
 			domain = self.domain,
 			argsOut = {
@@ -125,9 +129,20 @@ function CLSolver:init(args)
 		end		
 	end
 
-	program:compile()
-
 	if not self.args.dot then
+		makeProgram()
+		local mul = program:kernel{
+			domain = self.domain,
+			argsOut = {
+				{name='y', type=self.type, obj=true},
+			},
+			argsIn = {
+				{name='a', type=self.type, obj=true},
+				{name='b', type=self.type, obj=true},
+			},
+			body = [[	y[index] = a[index] * b[index];]],
+		}
+	
 		local dot = self.env:reduce{
 			size = self.domain.volume,
 			op = function(x,y) return x..' + '..y end,
@@ -136,6 +151,10 @@ function CLSolver:init(args)
 			mul(dot.buffer, a.obj, b.obj)
 			return dot()
 		end
+	end
+
+	if program then
+		program:compile()
 	end
 end
 

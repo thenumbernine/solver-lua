@@ -4,6 +4,10 @@ local CLSolver = require 'solver.cl.solver'
 
 local CLConjGrad = class(CLSolver)
 
+CLConjGrad.needs = {
+	A = true,
+}
+
 --[[
 This is just like the object- and operator-based ConjugateGradient.lua in the parent directory
 except it has a focus on reuing objects.
