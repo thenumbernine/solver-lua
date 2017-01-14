@@ -1,5 +1,5 @@
 local table = require 'ext.table'
-local gmres = require 'solver.cl.gmres'
+local GMRes = require 'solver.cl.gmres'
 
 --[[
 performs update of iteration x[n+1] = x[n] - (dF/dx)^-1 F(x[n])
@@ -19,7 +19,10 @@ args:
 
 	new
 	dot
-	norm (optiona) defaults to dot(x,x)/n
+	norm (optiona) only used for alpha searching and error threshold testing.
+		defaults to dot(x,x)/size
+	mulAdd
+	scale
 --]]
 local function jfnk(args)
 	local f = assert(args.f)
@@ -39,18 +42,41 @@ local function jfnk(args)
 	local norm = args.norm or function(x) return dot(x,x) / args.size end
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
-
-	local gmresArgs = args.gmres or {}	
-	gmresArgs.new = gmresArgs.new or new
-	gmresArgs.dot = gmresArgs.dot or dot
-	gmresArgs.mulAdd = gmresArgs.mulAdd or mulAdd
-	gmresArgs.scale = gmresArgs.scale or scale
-
+	
 	local f_of_x = new'f_of_x' 
 	local x_plus_dx = new'x_plus_dx'
 	local x_minus_dx = new'x_minus_dx'
 	local f_of_x_plus_dx = new'f_of_x_plus_dx'
 	local f_of_x_minus_dx = new'f_of_x_minus_dx'
+
+	local cache = {}
+	local gmres = GMRes(table({
+		-- allow args.gmres to overwrite these
+		dot = dot,
+		mulAdd = mulAdd,
+		scale = scale,
+	}, args.gmres, {
+		-- these overwrite args.gmres
+		new = function(name)
+			-- cache allocations for multiple calls
+			if cache[name] then return cache[name] end
+			local buffer = new(name)
+			cache[name] = buffer
+			return buffer
+		end,
+		-- this is where it helps to have access to the inplace-behavior that is wrapping jfnk-inplace
+		-- for that we'd have to change from a behvaior to inheritence.  sounds good.
+		x = dx,
+		A = function(result, dx)
+			mulAdd(x_plus_dx, x, dx, jfnkEpsilon)
+			mulAdd(x_minus_dx, x, dx, -jfnkEpsilon)
+			f(f_of_x_plus_dx, x_plus_dx)
+			f(f_of_x_minus_dx, x_minus_dx)
+			mulAdd(result, f_of_x_plus_dx, f_of_x_minus_dx, -1)
+			scale(result, result, 1 / (2 * jfnkEpsilon))
+		end,
+		b = f_of_x,
+	}))
 
 	local function residualAtAlpha(alpha)
 		mulAdd(x_plus_dx, x, dx, -alpha)
@@ -102,8 +128,6 @@ local function jfnk(args)
 	}
 	local lineSearchMethod = assert(lineSearchMethods[lineSearch], "couldn't find line search method "..lineSearch)
 
-	local cache = {}
-
 	for iter=1,maxiter do
 		f(f_of_x, x)
 
@@ -114,24 +138,7 @@ local function jfnk(args)
 		-- solve dx = (dF/dx)^-1 F(x) via iterative (dF/dx) dx = f(x)
 		-- use jfnk approximation for dF/dx * dx
 -- TODO move this 'gmres' object outside so it only builds the kernels once	
-		gmres(table(gmresArgs, {
-			new = function(name)
-				if cache[name] then return cache[name] end
-				local buffer = new(name)
-				cache[name] = buffer
-				return buffer
-			end,
-			x = dx,
-			A = function(result, dx)
-				mulAdd(x_plus_dx, x, dx, jfnkEpsilon)
-				mulAdd(x_minus_dx, x, dx, -jfnkEpsilon)
-				f(f_of_x_plus_dx, x_plus_dx)
-				f(f_of_x_minus_dx, x_minus_dx)
-				mulAdd(result, f_of_x_plus_dx, f_of_x_minus_dx, -1)
-				scale(result, result, 1 / (2 * jfnkEpsilon))
-			end,
-			b = f_of_x,
-		}))
+		gmres()
 
 		-- trace along dx to find minima of solution
 		local alpha = lineSearchMethod()
