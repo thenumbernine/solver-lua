@@ -24,23 +24,19 @@ local function inPlaceBehavior(inPlaceSolver)
 		-- and assume A is a cl.obj.kernel, 
 		-- so wrap A to pass along the cl.buffers to the kernel
 		local A = assert(args.A)
-		self.args.A = function(y, x) A(y.buf, x.buf) end
+		self.args.A = function(y, x) A(y.obj, x.obj) end
 
 		-- same with MInv
 		if args.MInv then
 			local MInv = args.MInv
-			self.args.MInv = function(y, x) MInv(y.buf, x.buf) end
+			self.args.MInv = function(y, x) MInv(y.obj, x.obj) end
 		end
 
-		local domain = A.domain or self.env.domain
+		local domain = A.domain or self.env.base
 		local size = self.args.size or domain.volume
 		self.type = self.args.type or self.args.x.type
 
-		self.domain = require 'cl.obj.domain'{
-			env = self.env,
-			size = size,
-			dim = 1,
-		}
+		self.domain = env:domain{size = size, dim = 1}
 	
 		-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 		self.args.maxiter = self.args.maxiter or self.domain.volume
@@ -51,11 +47,11 @@ local function inPlaceBehavior(inPlaceSolver)
 
 		-- hmm, this release, coupled with the __gc's release, makes things crash ...
 		-- at least I know the __gc is cleaning up correctly
-		--self.args.free = function(buffer) buffer.buf:release() end
+		--self.args.free = function(buffer) buffer.obj:release() end
 		self.args.copy = self.args.copy or function(dst, src) 
 			self.env.cmds:enqueueCopyBuffer{
-				src = src.buf,
-				dst = dst.buf,
+				src = src.obj,
+				dst = dst.obj,
 				size = self.domain.volume * ffi.sizeof(self.type),
 			}
 		end
@@ -65,11 +61,11 @@ local function inPlaceBehavior(inPlaceSolver)
 		local mul = program:kernel{
 			domain = self.domain,
 			argsOut = {
-				{name='y', type=self.type, buf=true},
+				{name='y', type=self.type, obj=true},
 			},
 			argsIn = {
-				{name='a', type=self.type, buf=true},
-				{name='b', type=self.type, buf=true},
+				{name='a', type=self.type, obj=true},
+				{name='b', type=self.type, obj=true},
 			},
 			body = [[	y[index] = a[index] * b[index];]],
 		}
@@ -78,17 +74,17 @@ local function inPlaceBehavior(inPlaceSolver)
 			local mulAdd = program:kernel{
 				domain = self.domain,
 				argsOut = {
-					{name='y', type=self.type, buf=true},
+					{name='y', type=self.type, obj=true},
 				},
 				argsIn = {
-					{name='a', type=self.type, buf=true},
-					{name='b', type=self.type, buf=true},
+					{name='a', type=self.type, obj=true},
+					{name='b', type=self.type, obj=true},
 					{name='s', type='real'},
 				},
 				body = [[	y[index] = a[index] + b[index] * s;]],
 			}
 			self.args.mulAdd = function(y,a,b,s)
-				mulAdd(y.buf, a.buf, b.buf, ffi.new('real[1]', s))
+				mulAdd(y.obj, a.obj, b.obj, ffi.new('real[1]', s))
 			end
 		end
 
@@ -99,16 +95,16 @@ local function inPlaceBehavior(inPlaceSolver)
 			local scale = program:kernel{
 				domain = self.domain,
 				argsOut = {
-					{name='y', type=self.type, buf=true},
+					{name='y', type=self.type, obj=true},
 				},
 				argsIn = {
-					{name='a', type=self.type, buf=true},
+					{name='a', type=self.type, obj=true},
 					{name='s', type='real'},
 				},
 				body = [[	y[index] = a[index] * s;]],
 			}
 			self.args.scale = function(y,a,s)
-				scale(y.buf, a.buf, ffi.new('real[1]', s))
+				scale(y.obj, a.obj, ffi.new('real[1]', s))
 			end		
 		end
 
@@ -120,7 +116,7 @@ local function inPlaceBehavior(inPlaceSolver)
 				op = function(x,y) return x..' + '..y end,
 			}
 			self.args.dot = function(a,b)
-				mul(dot.buffer, a.buf, b.buf)
+				mul(dot.buffer, a.obj, b.obj)
 				return dot()
 			end
 		end
