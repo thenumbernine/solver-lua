@@ -36,7 +36,7 @@ local function inPlaceBehavior(inPlaceSolver)
 		local size = self.args.size or domain.volume
 		self.type = self.args.type or self.args.x.type
 
-		self.domain = env:domain{size = size, dim = 1}
+		self.domain = self.env:domain{size = size, dim = 1}
 	
 		-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 		self.args.maxiter = self.args.maxiter or self.domain.volume
