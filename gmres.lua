@@ -89,7 +89,6 @@ return function(args)
 			h[i][j] = 0
 		end
 	end
-
 	local cs = {}	--cs[m]
 	for i=1,m do
 		cs[i] = 0
@@ -114,7 +113,7 @@ return function(args)
 		for i=1,m do		-- construct orthonormal basis using Gram-Schmidt
 			iter = iter + 1
 			if iter >= maxiter then break end
-			
+
 			local w = MInv(A(v[i]))
 			for k=1,i do
 				h[k][i] = dot(w, v[k])

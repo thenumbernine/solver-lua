@@ -29,9 +29,7 @@ args:
 	new
 	dot
 	norm (optiona) only used for alpha searching and error threshold testing.
-		defaults to dot(x,x)
-		the cpu version defaults to dot(x,x)/size
-		but the gpu version never knows the size
+		defaults to dot(x,x) / self.domain.volume
 	mulAdd
 	scale
 --]]
@@ -40,7 +38,6 @@ function CLJFNK:__call()
 
 	local f = assert(args.f)
 	local x = assert(args.x)
-	local dx = args.dx or x
 	local epsilon = args.epsilon or 1e-10
 	local maxiter = args.maxiter or 100
 	local maxAlpha = args.alpha or 1
@@ -52,10 +49,16 @@ function CLJFNK:__call()
 	-- how should jfnk.new and gmres.new share?
 	local new = assert(args.new)
 	local dot = assert(args.dot)
-	local norm = args.norm or function(x) return dot(x,x) end
+	local norm = args.norm or function(x) return dot(x,x) / self.domain.volume end
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
 	
+	local dx = args.dx
+	if not dx then
+		dx = new'dx'
+		args.copy(dx, x)
+	end
+
 	local f_of_x = new'f_of_x' 
 	local x_plus_dx = new'x_plus_dx'
 	local x_minus_dx = new'x_minus_dx'
@@ -153,25 +156,16 @@ function CLJFNK:__call()
 
 	for iter=1,maxiter do
 		f(f_of_x, x)
-
 		local err = norm(f_of_x)
 		if errorCallback and errorCallback(err, iter) then return x end
 		if err < epsilon then return x end
 
-local function buf2str(x)
-	return ''
-end
 		-- solve dx = (dF/dx)^-1 F(x) via iterative (dF/dx) dx = f(x)
 		-- use jfnk approximation for dF/dx * dx
-print('solving gmres')
-print('dx',buf2str(dx))
-print('f_of_x',buf2str(f_of_x))
 		gmres()
-print('got solution dx',buf2str(dx))
 
 		-- trace along dx to find minima of solution
 		local alpha = lineSearchMethod()
-	
 		mulAdd(x, x, dx, -alpha)
 	end
 

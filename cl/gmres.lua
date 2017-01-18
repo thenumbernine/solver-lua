@@ -84,8 +84,8 @@ function CLGMRes:__call()
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
-	local m = args.restart or 10	-- don't default this to anything too big
-
+	local m = args.restart or math.min(10, self.domain.volume)	-- don't default this to anything too big
+	
 	local copy = assert(args.copy)
 	local new = assert(args.new)
 	local free = args.new
@@ -170,6 +170,7 @@ function CLGMRes:__call()
 				local err = math.abs(s[i+1]) / (bLen > 0 and bLen or 1)
 				if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
 				if err < epsilon then	-- update approximation
+
 					updateX(x, h, s, v, i, mulAdd)
 					return x
 				end

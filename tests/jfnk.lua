@@ -9,8 +9,13 @@ print(jfnk{
 		return vec3.cross({1,0,0}, x) - {0,0,1}
 	end,
 	errorCallback = function(err, iter)
-		print('err',err,'iter',iter)
+		print('jfnk err',err,'iter',iter)
 	end,
+	gmres = {
+		errorCallback = function(err, iter, x)
+			print('gmres err',err,'iter',iter)
+		end,
+	},
 })
 
 -- current is the divergence of the EM vector potential

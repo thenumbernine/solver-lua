@@ -95,7 +95,6 @@ local function jfnk(args)
 
 	for iter=1,maxiter do
 		local F_of_x = f(x)
-
 		local err = norm(F_of_x)
 		if errorCallback and errorCallback(err, iter) then return x end
 		if err < epsilon then return x end
@@ -112,9 +111,7 @@ local function jfnk(args)
 
 		-- trace along dx to find minima of solution
 		local alpha = lineSearchMethod()
-	
 		x = x - dx * alpha
-	
 	end
 
 	return x
