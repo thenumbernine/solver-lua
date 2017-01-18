@@ -1,3 +1,3 @@
 putting my sparse/abstracted linear solvers into one place
 
-the test.lua file depends on my lua-ext project
+includes CPU and GPU version of conjugate gradient, conjugate residual, gmres, and JFNK
