@@ -39,28 +39,23 @@ function CLSolver:init(args)
 
 	-- only in conjgrad, conjres, gmres:
 	-- assume our buffers are cl.obj.buffers (as newBuffer is implemented)
-	-- and assume A is a cl.obj.kernel, 
-	-- so wrap A to pass along the cl.buffers to the kernel
 	if self.needs.A then
-		local A = assert(args.A)
-		self.args.A = function(y, x) A(y.obj, x.obj) end
+		self.args.A = assert(args.A)
 	end
 
 	-- only in jfnk:
 	if self.needs.f then
-		local f = assert(args.f)
-		self.args.f = function(y, x) f(y.obj, x.obj) end
+		self.args.f = assert(args.f)
 	end
 
 	-- same with MInv
 	if args.MInv then
-		local MInv = args.MInv
-		self.args.MInv = function(y, x) MInv(y.obj, x.obj) end
+		self.args.MInv = args.MInv
 	end
 
 	local domain = 
-		(args.A and args.A.domain)
-		or (args.f and args.f.domain)
+		(args.A and type(args.A) == 'table' and args.A.domain)
+		or (args.f and type(args.f) == 'table' and args.f.domain)
 		or self.env.base
 	local size = self.args.size or domain.volume
 	self.type = self.args.type or self.args.x.type
@@ -104,7 +99,7 @@ function CLSolver:init(args)
 			body = [[	y[index] = a[index] + b[index] * s;]],
 		}
 		self.args.mulAdd = function(y,a,b,s)
-			mulAdd(y.obj, a.obj, b.obj, ffi.new('real[1]', s))
+			mulAdd(y, a, b, ffi.new('real[1]', s))
 		end
 	end
 
@@ -125,7 +120,7 @@ function CLSolver:init(args)
 			body = [[	y[index] = a[index] * s;]],
 		}
 		self.args.scale = function(y,a,s)
-			scale(y.obj, a.obj, ffi.new('real[1]', s))
+			scale(y, a, ffi.new('real[1]', s))
 		end		
 	end
 
@@ -148,7 +143,7 @@ function CLSolver:init(args)
 			op = function(x,y) return x..' + '..y end,
 		}
 		self.args.dot = function(a,b)
-			mul(dot.buffer, a.obj, b.obj)
+			mul(dot.buffer, a, b)
 			return dot()
 		end
 	end

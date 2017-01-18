@@ -29,7 +29,9 @@ args:
 	new
 	dot
 	norm (optiona) only used for alpha searching and error threshold testing.
-		defaults to dot(x,x)/size
+		defaults to dot(x,x)
+		the cpu version defaults to dot(x,x)/size
+		but the gpu version never knows the size
 	mulAdd
 	scale
 --]]
@@ -46,11 +48,11 @@ function CLJFNK:__call()
 	local lineSearch = args.lineSearch or 'bisect'
 	local lineSearchMaxIter = args.lineSearchMaxIter or 100
 	local jfnkEpsilon = args.jfnkEpsilon or 1e-6
-
+	
 	-- how should jfnk.new and gmres.new share?
 	local new = assert(args.new)
 	local dot = assert(args.dot)
-	local norm = args.norm or function(x) return dot(x,x) / args.size end
+	local norm = args.norm or function(x) return dot(x,x) end
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
 	
@@ -61,14 +63,14 @@ function CLJFNK:__call()
 	local f_of_x_minus_dx = new'f_of_x_minus_dx'
 
 	local cache = {}
-	local gmres = CLGMRes(table({
+	local gmresArgs = table({
 		-- allow args.gmres to overwrite these
 		env = self.env,
 		dot = dot,
 		mulAdd = mulAdd,
 		scale = scale,
 		copy = args.copy,
-	}, args.gmres, {
+	}, args.gmres or {}, {
 		-- these overwrite args.gmres
 		new = function(name)
 			-- cache allocations for multiple calls
@@ -80,6 +82,12 @@ function CLJFNK:__call()
 		-- this is where it helps to have access to the inplace-behavior that is wrapping jfnk-inplace
 		-- for that we'd have to change from a behvaior to inheritence.  sounds good.
 		x = dx,
+		
+		-- TODO these are accepting cl.buffers but are passing to mulAdd
+		-- which expects cl.obj.buffers 
+		-- ... and subsequently passes to its kernels cl.buffers ...
+		-- so rather than re-wrap them
+		-- instead change all solver.cl's to use cl.obj.buffers
 		A = function(result, dx)
 			mulAdd(x_plus_dx, x, dx, jfnkEpsilon)
 			mulAdd(x_minus_dx, x, dx, -jfnkEpsilon)
@@ -89,7 +97,9 @@ function CLJFNK:__call()
 			scale(result, result, 1 / (2 * jfnkEpsilon))
 		end,
 		b = f_of_x,
-	}))
+	})
+	assert(gmresArgs.A)
+	local gmres = CLGMRes(gmresArgs)
 
 	local function residualAtAlpha(alpha)
 		mulAdd(x_plus_dx, x, dx, -alpha)
@@ -148,10 +158,16 @@ function CLJFNK:__call()
 		if errorCallback and errorCallback(err, iter) then return x end
 		if err < epsilon then return x end
 
+local function buf2str(x)
+	return ''
+end
 		-- solve dx = (dF/dx)^-1 F(x) via iterative (dF/dx) dx = f(x)
 		-- use jfnk approximation for dF/dx * dx
--- TODO move this 'gmres' object outside so it only builds the kernels once	
+print('solving gmres')
+print('dx',buf2str(dx))
+print('f_of_x',buf2str(f_of_x))
 		gmres()
+print('got solution dx',buf2str(dx))
 
 		-- trace along dx to find minima of solution
 		local alpha = lineSearchMethod()

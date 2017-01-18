@@ -55,6 +55,7 @@ This is for the sake of using it with GPU acceleration.
 
 args:
 	A = function(y,x) for x ro, y rw
+		y and x are cl.buffer objects
 		applies the linear function of A
 		reads from x vector, writes to y vector
 	b = object to hold 'b' vector
