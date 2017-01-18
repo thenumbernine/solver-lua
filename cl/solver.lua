@@ -53,8 +53,10 @@ function CLSolver:init(args)
 		self.args.MInv = args.MInv
 	end
 
+	-- how to determine the domain?
 	local domain = 
-		(args.A and type(args.A) == 'table' and args.A.domain)
+		args.domain
+		or (args.A and type(args.A) == 'table' and args.A.domain)
 		or (args.f and type(args.f) == 'table' and args.f.domain)
 		or self.env.base
 	local size = self.args.size or domain.volume
@@ -154,8 +156,7 @@ function CLSolver:init(args)
 end
 
 function CLSolver:newBuffer(name)
-	return self.env:buffer{
-		size = assert(self.domain.volume),
+	return self.domain:buffer{
 		type = self.type,
 		name = name,
 	}

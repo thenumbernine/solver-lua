@@ -100,8 +100,8 @@ function CLJFNK:__call()
 			scale(result, result, 1 / (2 * jfnkEpsilon))
 		end,
 		b = f_of_x,
+		domain = self.domain,
 	})
-	assert(gmresArgs.A)
 	local gmres = CLGMRes(gmresArgs)
 
 	local function residualAtAlpha(alpha)
