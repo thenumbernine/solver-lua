@@ -44,7 +44,7 @@ function CLConjRes:__call()
 
 	local copy = assert(args.copy)
 	local new = assert(args.new)
-	local free = args.new
+	local free = args.free
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
 
