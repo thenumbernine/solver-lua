@@ -110,7 +110,7 @@ function CLGMRes:__call()
 
 	repeat	-- runs only once.  used for break.
 		local rLen = math.sqrt(dot(r, r))
-		local err = rLen / bLen
+		local err = rLen / (bLen > 0 and bLen or 1)
 		if errorCallback and errorCallback(err, 0, x, rLen*rLen, bLen*bLen) then break end
 		if err < epsilon then break end
 
