@@ -77,9 +77,9 @@ return function(args)
 	local v = {}	--v[m+1][n]
 	for i=1,m+1 do
 		v[i] = {}
-		for j=1,#b do
+--		for j=1,#b do
 --			v[i][j] = 0
-		end
+--		end
 	end
 
 	local h = {}	--h[m+1][m]
