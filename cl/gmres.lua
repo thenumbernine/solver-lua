@@ -16,7 +16,10 @@ local function updateX(x, h, s, v, i, mulAdd)
 	for j=1,i do
 		subH[j] = {table.unpack(h[j], 1, i)}
 	end
+--print('subH', require 'matrix'(subH))	
+--print('subS', require 'matrix'(subS))	
 	local y = backsub(subH, subS)
+--print('y', require 'matrix'(y))	
 	--x = x + V(:,1:i)*y
 	for j=1,i do
 		mulAdd(x, x, v[j], y[j])	
@@ -75,6 +78,7 @@ args:
 	copy = function(dst, src) copies contents of src into dst
 
 	dot = function(a,b) returns a number of the inner product of a and b
+	norm (optional) = function(a) returns a vector norm of a. default is L2 norm: sqrt(dot(a,a))
 	mulAdd = function(y,a,b,c) y = a + b * c, for y,a,b vectors and c scalar
 	scale = function(y,x,s) y = x * s, for y,x vectors and s scalar
 --]]
@@ -95,6 +99,10 @@ function CLGMRes:__call()
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
+	
+	local norm = args.norm or function(v)
+		return math.sqrt(dot(v, v))
+	end
 
 	local x = args.x
 	if not x then
@@ -104,7 +112,7 @@ function CLGMRes:__call()
 
 	local r = new'r'	--[n]
 	
-	--local bLen = math.sqrt(dot(b,b))
+	--local bNorm = norm(b)
 
 	-- r = M^-1 (b - A x)
 	A(r, x)
@@ -112,9 +120,9 @@ function CLGMRes:__call()
 	if MInv then MInv(r, r) end
 
 	repeat	-- runs only once.  used for break.
-		local rLen = math.sqrt(dot(r, r))
-		local err = rLen --/ (bLen > 0 and bLen or 1)
-		if errorCallback and errorCallback(err, 0, x, rLen*rLen--[[, bLen*bLen]]) then break end
+		local rNorm = norm(r)
+		local err = rNorm --/ (bNorm > 0 and bNorm or 1)
+		if errorCallback and errorCallback(err, 0, x, rNorm*rNorm--[[, bNorm*bNorm]]) then break end
 		if err < epsilon then break end
 
 		-- all these initialize to zero
@@ -138,10 +146,10 @@ function CLGMRes:__call()
 		local iter = 0
 		while true do
 
-			scale(v[1], r, 1/rLen)
+			scale(v[1], r, 1/rNorm)
 		
-			-- s = [rLen, 0, 0, ...]
-			s[1] = rLen
+			-- s = [rNorm, 0, 0, ...]
+			s[1] = rNorm
 			for i=2,m+1 do
 				s[i] = 0
 			end
@@ -156,24 +164,26 @@ function CLGMRes:__call()
 
 				for k=1,i do
 					h[k][i] = dot(w, v[k])
+--print('h['..k..']['..i..'] = '..h[k][i])
 					mulAdd(w, w, v[k], -h[k][i])
 				end
-				h[i+1][i] = math.sqrt(dot(w,w))
+				h[i+1][i] = norm(w)
 				scale(v[i+1], w, 1/h[i+1][i])
 				for k=1,i-1 do	-- apply Givens rotation
 					h[k][i], h[k+1][i] =
 						cs[k] * h[k][i] + sn[k] * h[k+1][i],
 						-sn[k] * h[k][i] + cs[k] * h[k+1][i]
+--print('h['..k..']['..i..'], h['..(k+1)..']['..i..'] = '..h[k][i]..', '..h[k+1][i])
 				end
 				cs[i], sn[i] = rotmat(h[i][i], h[i+1][i]) -- form i-th rotation matrix
 				s[i], s[i+1] = cs[i] * s[i], -sn[i] * s[i]	-- approximate residual norm
 				h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
+--print('h['..i..']['..i..'] = '..h[i][i])
 				h[i+1][i] = 0
 
-				local err = math.abs(s[i+1]) --/ (bLen > 0 and bLen or 1)
-				if errorCallback and errorCallback(err, iter, x, err*err--[[*bLen*bLen, bLen*bLen]]) then return x end
+				local err = math.abs(s[i+1]) --/ (bNorm > 0 and bNorm or 1)
+				if errorCallback and errorCallback(err, iter, x, err*err--[[*bNorm*bNorm, bNorm*bNorm]]) then return x end
 				if err < epsilon then	-- update approximation
-
 					updateX(x, h, s, v, i, mulAdd)
 					return x
 				end
@@ -187,9 +197,9 @@ function CLGMRes:__call()
 			mulAdd(r, b, r, -1)
 			if MInv then MInv(r, r) end
 			
-			rLen = math.sqrt(dot(r,r))
-			s[m+1] = rLen
-			local err = rLen --/ (bLen > 0 and bLen or 1)		-- check convergence
+			rNorm = norm(r)
+			s[m+1] = rNorm
+			local err = rNorm --/ (bNorm > 0 and bNorm or 1)		-- check convergence
 			if err < epsilon then break end
 		end
 
