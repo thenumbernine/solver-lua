@@ -58,6 +58,9 @@ args:
 		y and x are cl.buffer objects
 		applies the linear function of A
 		reads from x vector, writes to y vector
+		usage of A:
+			A(r, x)
+			A(w, v[i])
 	b = object to hold 'b' vector
 	x (optional) = object to hold 'x' vector.  initialized to 'b' if not provided.
 	MInv = (optional) function(y,x) for x ro and y rw vectors. preconditioner
@@ -101,7 +104,7 @@ function CLGMRes:__call()
 
 	local r = new'r'	--[n]
 	
-	local bLen = math.sqrt(dot(b,b))
+	--local bLen = math.sqrt(dot(b,b))
 
 	-- r = M^-1 (b - A x)
 	A(r, x)
@@ -110,8 +113,8 @@ function CLGMRes:__call()
 
 	repeat	-- runs only once.  used for break.
 		local rLen = math.sqrt(dot(r, r))
-		local err = rLen / (bLen > 0 and bLen or 1)
-		if errorCallback and errorCallback(err, 0, x, rLen*rLen, bLen*bLen) then break end
+		local err = rLen --/ (bLen > 0 and bLen or 1)
+		if errorCallback and errorCallback(err, 0, x, rLen*rLen--[[, bLen*bLen]]) then break end
 		if err < epsilon then break end
 
 		-- all these initialize to zero
@@ -167,8 +170,8 @@ function CLGMRes:__call()
 				h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 				h[i+1][i] = 0
 
-				local err = math.abs(s[i+1]) / (bLen > 0 and bLen or 1)
-				if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
+				local err = math.abs(s[i+1]) --/ (bLen > 0 and bLen or 1)
+				if errorCallback and errorCallback(err, iter, x, err*err--[[*bLen*bLen, bLen*bLen]]) then return x end
 				if err < epsilon then	-- update approximation
 
 					updateX(x, h, s, v, i, mulAdd)
@@ -186,7 +189,7 @@ function CLGMRes:__call()
 			
 			rLen = math.sqrt(dot(r,r))
 			s[m+1] = rLen
-			local err = rLen / (bLen > 0 and bLen or 1)		-- check convergence
+			local err = rLen --/ (bLen > 0 and bLen or 1)		-- check convergence
 			if err < epsilon then break end
 		end
 
