@@ -6,6 +6,7 @@ local range = require 'ext.range'
 local jacobi = require 'solver.jacobi'
 local conjgrad = require 'solver.conjgrad'
 local conjres = require 'solver.conjres'
+local bicgstab = require 'solver.bicgstab'
 local gmres = require 'solver.gmres'
 
 local vec = class()
@@ -108,12 +109,52 @@ local function matfuncT(A)
 end
 
 for _,problemInfo in ipairs{
-	-- works with jacobi:
-	{name='prob1', A={{1,.07,0,0,0},{-.07,1,.07,0,0},{0,-.07,1,.07,0},{0,0,-.07,1,.07},{0,0,0,-.07,1}}, b={1,2,3,4,5}},
-	-- doesn't:
-	{name='prob2', A={{1,2},{3,4}}, b={5,6}},
-	{name='prob3', A={{1,2,3},{4,5,6},{7,8,9}}, b={100,200,300}},
-	{name='prob4', A={{1,1},{2,1}}, b={2,0}},
+	-- works for all 
+	-- gmres is slightly off
+	{
+		name='prob1',
+		A={
+			{1,.07,0,0,0},
+			{-.07,1,.07,0,0},
+			{0,-.07,1,.07,0},
+			{0,0,-.07,1,.07},
+			{0,0,0,-.07,1},
+		},
+		b={1,2,3,4,5},
+	},
+	
+	-- nans for jacobi
+	-- nans for gmres
+	{
+		name='prob2',
+		A={
+			{1,2},
+			{3,4},
+		},
+		b={5,6}
+	},
+	-- singular matrix -- should fail for all
+	-- nans for jacobi, bicgstab, and gmres
+	-- all others give arbitrary values
+	{
+		name='prob3',
+		A={
+			{1,2,3},
+			{4,5,6},
+			{7,8,9},
+		},
+		b={100,200,300},
+	},
+	-- nans for jacobi and gmres
+	-- bicgstab is off by a lot
+	{
+		name='prob4',
+		A={
+			{1,1},
+			{2,1},
+		},
+		b={2,0},
+	},
 --[[	
 	(function()
 		local n = 16
@@ -147,6 +188,10 @@ for _,problemInfo in ipairs{
 		{
 			name = '-conjres',
 			solver = conjres,
+		},
+		{
+			name = '-bicgstab',
+			solver = bicgstab,
 		},
 		{
 			name = '-gmres',
@@ -200,11 +245,13 @@ for _,problemInfo in ipairs{
 				clone = vec,
 				norm = vec.norm,
 				dot = vec.dot,
+				-- used for bicgstab
+				zero = vec(range(#A)),
 				-- used for gmres
 				restart = #b,
 				-- used for preconditioners
 				MInv = fMInv,
-				MInvT = fMInvT,
+				MInvT = fMInvT,	-- only for BiCG (the unstable version)
 				-- used for jacobi
 				scale = function(a,b)
 					local c = vec(a)

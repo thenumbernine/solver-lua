@@ -12,6 +12,8 @@ args:
 	errorCallback (optional)
 	epsilon (optional)
 	maxiter (optional)
+	M1Inv (optional) preconditioner (inverse of 'K1' in the article)
+	MInv (optional) preconditioner (inverse of 'K' in the article ... K = K1 K2)
 --]]
 return function(args)
 	local A = assert(args.A)
@@ -19,7 +21,6 @@ return function(args)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
 	local MInv = args.MInv or clone
-	local MInvT = args.MInv and assert(args.MInvT, "you provided a MInv but not a MInvT") or clone
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = 10000
@@ -47,7 +48,7 @@ return function(args)
 		local nrho = dot(rHat, r)
 		local beta = nrho / rho * alpha / omega
 		local np = r + beta * (p - omega * v)
-		local y = KInv(np)
+		local y = MInv and MInv(np) or np
 		local nv = A(y)
 		alpha = nrho / dot(rHat, nv)
 		local s = r - alpha * nv
@@ -56,14 +57,21 @@ return function(args)
 			x = x + alpha * p
 			break
 		end
-		local z = KInv(s)
+		local z = MInv and MInv(s) or s
 		local t = A(z)
-		local K1InvT = K1Inv(t)
-		local nomega = dot(K1InvT, K1Inv(s)) / dot(K1InvT, K1InvT)
+		local M1InvS = M1Inv and M1Inv(s) or s
+		local M1InvT = M1Inv and M1Inv(t) or t
+		local nomega = dot(M1InvT, M1InvS) / dot(M1InvT, M1InvT)
 		local nx = x + alpha * y + nomega * z
 		-- TODO "if x is accurate enough then quit"
 		local nr = s - nomega * t
 		-- TODO errorCallback
+	
+		local err = dot(nr, nr)
+		if errorCallback and errorCallback(err, iter, nx) then return nx end
+		if err < epsilon then	-- update approximation
+			return nx
+		end
 
 		rho = nrho
 		p = np
@@ -72,4 +80,6 @@ return function(args)
 		x = nx
 		r = nr
 	end
+
+	return x
 end
