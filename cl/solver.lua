@@ -60,7 +60,7 @@ function CLSolver:init(args)
 		or (args.f and type(args.f) == 'table' and args.f.domain)
 		or self.env.base
 	local size = self.args.size or domain.volume
-	self.type = self.args.type or self.args.x.type
+	self.type = self.args.type or (self.args.x and self.args.x.type) or 'real'
 
 	self.domain = self.env:domain{size = size, dim = 1}
 

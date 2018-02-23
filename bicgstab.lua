@@ -2,7 +2,6 @@
 source: https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method#Preconditioned_BiCGSTAB
 args:
 	A = linear function A : x -> x
-	AT = transpose of A
 	b = solution vector
 	x (optional) = initial guess, default to b
 	rHat (optional) = alternative r, should be r dot rHat ~= 0, defaults to r
@@ -17,7 +16,6 @@ args:
 --]]
 return function(args)
 	local A = assert(args.A)
-	local AT = assert(args.AT)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
 	local MInv = args.MInv or clone
@@ -59,9 +57,8 @@ return function(args)
 		end
 		local z = MInv and MInv(s) or s
 		local t = A(z)
-		local M1InvS = M1Inv and M1Inv(s) or s
 		local M1InvT = M1Inv and M1Inv(t) or t
-		local nomega = dot(M1InvT, M1InvS) / dot(M1InvT, M1InvT)
+		local nomega = dot(M1InvT, z) / dot(M1InvT, M1InvT)
 		local nx = x + alpha * y + nomega * z
 		-- TODO "if x is accurate enough then quit"
 		local nr = s - nomega * t

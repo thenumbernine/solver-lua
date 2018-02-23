@@ -18,18 +18,18 @@ args:
 		applies the linear function of A
 		reads from x vector, writes to y vector
 	b = object to hold 'b' vector
-	x (optional) = object to hold 'x' vector.  initialized to 'b' if not provided.
-	MInv = (optional) function(y,x) for x ro and y rw vectors. preconditioner
+	x (optional) = object to hold 'x' vector.  allocates and initialized to 'b' if not provided.
+	MInv (optional) = function(y,x) for x ro and y rw vectors. preconditioner
 	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
 	
-	new = function() returns and create a new vector
+	new = function() creates and returns a new vector
 	free = function(v) frees vector
 	copy = function(dst, src) copies contents of src into dst
 
-	dot = function(a,b) returns a number of the inner product of a and b
+	dot = function(a,b) returns the inner product of a and b as a number value
 	mulAdd = function(y,a,b,c) y = a + b * c, for y,a,b vectors and c scalar
 --]]
 function CLConjRes:__call()
