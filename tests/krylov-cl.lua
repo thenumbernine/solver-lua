@@ -25,15 +25,20 @@ local A = env:kernel{
 	argsOut = {{name='y', type='global real*', buffer=true}},
 	argsIn = {{name='x', type='const global real*', buffer=true}},
 	body = [[
+	//OOB
+	if (i.x >= size.x || i.y >= size.y) return;	
+
+	//boundary
 	if (i.x == 0 || 
 		i.y == 0 ||
-		i.x >= size.x ||
-		i.y >= size.y)
+		i.x == size.x-1 ||
+		i.y == size.y-1)
 	{
 		y[index] = x[index];
 		return;
 	}
-	
+
+	//PDE
 	const real hSq = .01;
 	y[index] = -(
 		x[index + stepsize.x]
@@ -67,8 +72,8 @@ local x = env:buffer{name='x'}
 for _,solver in ipairs{
 	--'conjgrad',
 	--'conjres',
-	'bicgstab',
-	--'gmres',
+	--'bicgstab',
+	'gmres',
 } do
 	require('solver.cl.'..solver){
 		env = env,

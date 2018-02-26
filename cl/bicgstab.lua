@@ -77,19 +77,19 @@ function CLBiCGStab:__call()
 	local p = new'p'
 	local v = new'v'
 	local np = new'np'
-	local y = new'y'
+	local y = MInv and new'y' or nil
 	local s = new's'
-	local z = new'z'
+	local z = MInv and new'z' or nil
 	local t = new't'
-	local M1InvT = new'M1InvT'
+	local M1InvT = MInv and new'M1InvT' or t
 	
 	for iter=1,maxiter do
 		local nrho = dot(rHat, r)
 		local beta = nrho / rho * alpha / omega
 		mulAdd(np, r, p, beta)
 		mulAdd(np, np, v, -omega)
-		if MInv then MInv(y, np) else copy(y, np) end
-		A(v, y)
+		if MInv then MInv(y, np) end
+		A(v, y or np)
 		alpha = nrho / dot(rHat, v)
 		mulAdd(s, r, v, -alpha)
 		local s2 = dot(s,s)
@@ -97,14 +97,14 @@ function CLBiCGStab:__call()
 			mulAdd(x, x, p, alpha)
 			break
 		end
-		if MInv then MInv(z, s) else copy(z, s) end
-		A(t, z)
-		if M1Inv then M1Inv(M1InvT, t) else copy(M1InvT, t) end
-		local nomega = dot(M1InvT, z) / dot(M1InvT, M1InvT)
+		if MInv then MInv(z, s) end
+		A(t, z or s)
+		if M1Inv then M1Inv(M1InvT, t) end
+		local nomega = dot(M1InvT, z or s) / dot(M1InvT, M1InvT)
 		
 		-- x := x + alpha * y + nomega * z
-		mulAdd(x, x, y, alpha)
-		mulAdd(x, x, z, nomega)
+		mulAdd(x, x, y or np, alpha)
+		mulAdd(x, x, z or s, nomega)
 		
 		-- TODO "if x is accurate enough then quit"
 	
@@ -126,11 +126,11 @@ function CLBiCGStab:__call()
 		free(p)
 		free(v)
 		free(np)
-		free(y)
+		if y then free(y) end
 		free(s)
-		free(z)
+		if z then free(z) end
 		free(t)
-		free(M1InvT)
+		if M1InvT then free(M1InvT) end
 	end
 	
 	return x
