@@ -85,4 +85,3 @@ for _,solver in ipairs{
 	}()
 	splot(x, 'x-'..solver)
 end
-

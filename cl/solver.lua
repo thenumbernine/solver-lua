@@ -6,7 +6,7 @@ local CLSolver = class()
 --[[
 args:
 	env = env
-	size = (optional) size of buffer, in elements. default to A.domain.volume or env.base.volume
+	count = (optional) number of elements in the buffer. default to A.domain.volume or env.base.volume.
 	type = ctype of buffer
 	maxiter = maxiter of solver
 	new = (optional) function(name) = allocator
@@ -59,10 +59,10 @@ function CLSolver:init(args)
 		or (args.A and type(args.A) == 'table' and args.A.domain)
 		or (args.f and type(args.f) == 'table' and args.f.domain)
 		or self.env.base
-	local size = self.args.size or domain.volume
+	local count = self.args.count or domain.volume
 	self.type = self.args.type or (self.args.x and self.args.x.type) or 'real'
 
-	self.domain = self.env:domain{size = size, dim = 1}
+	self.domain = self.env:domain{size = count, dim = 1}
 
 	-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 	self.args.maxiter = self.args.maxiter or self.domain.volume
@@ -141,7 +141,7 @@ function CLSolver:init(args)
 		}
 	
 		local dot = self.env:reduce{
-			size = self.domain.volume,
+			count = self.domain.volume,
 			op = function(x,y) return x..' + '..y end,
 		}
 		self.args.dot = function(a,b)
