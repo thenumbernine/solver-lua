@@ -67,7 +67,7 @@ args:
 	b = object to hold 'b' vector
 	x (optional) = object to hold 'x' vector.  initialized to 'b' if not provided.
 	MInv = (optional) function(y,x) for x ro and y rw vectors. preconditioner
-	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
@@ -122,7 +122,7 @@ function CLGMRes:__call()
 	repeat	-- runs only once.  used for break.
 		local rNorm = norm(r)
 		local err = rNorm --/ (bNorm > 0 and bNorm or 1)
-		if errorCallback and errorCallback(err, 0, x, rNorm*rNorm--[[, bNorm*bNorm]]) then break end
+		if errorCallback and errorCallback(err, 0, x) then break end
 		if err < epsilon then break end
 
 		-- all these initialize to zero
@@ -182,7 +182,7 @@ function CLGMRes:__call()
 				h[i+1][i] = 0
 
 				local err = math.abs(s[i+1]) --/ (bNorm > 0 and bNorm or 1)
-				if errorCallback and errorCallback(err, iter, x, err*err--[[*bNorm*bNorm, bNorm*bNorm]]) then return x end
+				if errorCallback and errorCallback(err, iter, x) then return x end
 				if err < epsilon then	-- update approximation
 					updateX(x, h, s, v, i, mulAdd)
 					return x

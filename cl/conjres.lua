@@ -20,7 +20,7 @@ args:
 	b = object to hold 'b' vector
 	x (optional) = object to hold 'x' vector.  allocates and initialized to 'b' if not provided.
 	MInv (optional) = function(y,x) for x ro and y rw vectors. preconditioner
-	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
@@ -60,17 +60,14 @@ function CLConjRes:__call()
 	local Ar = new'Ar'
 	local MInvAp = MInv and new'MInvAp' or Ap
 
-	local bSq = dot(b,b)		-- m, m -> 1
-	if not math.isfinite(bSq) then return false, "|b| is not finite" end
-
 	A(r, x)						-- A(x) : m  
 	mulAdd(r, b, r, -1)			-- r : m
 	if MInv then MInv(r, r) end	-- MInv(r) : n
 
 	repeat
 		local rSq = dot(r, r)
-		local err = math.sqrt(rSq / (bSq > 0 and bSq or 1))
-		if errorCallback and errorCallback(err, 0, x, rSq, bSq) then break end
+		local err = math.sqrt(rSq)
+		if errorCallback and errorCallback(err, 0, x) then break end
 		if not math.isfinite(err) then return false, "r dot r is not finite" end
 		if err < epsilon then break end
 
@@ -91,8 +88,8 @@ function CLConjRes:__call()
 			mulAdd(r, r, MInvAp, -alpha)
 	
 			rSq = dot(r, r)
-			local err = math.sqrt(rSq / (bSq > 0 and bSq or 1))
-			if errorCallback and errorCallback(err, iter, x, rSq, bSq) then break end
+			local err = math.sqrt(rSq)
+			if errorCallback and errorCallback(err, iter, x) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
 		
