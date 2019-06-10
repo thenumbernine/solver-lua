@@ -121,7 +121,7 @@ function CLGMRes:__call()
 
 	repeat	-- runs only once.  used for break.
 		local rNorm = norm(r)
-		local err = rNorm --/ (bNorm > 0 and bNorm or 1)
+		local err = rNorm
 		if errorCallback and errorCallback(err, 0, x) then break end
 		if err < epsilon then break end
 
@@ -181,7 +181,7 @@ function CLGMRes:__call()
 --print('h['..i..']['..i..'] = '..h[i][i])
 				h[i+1][i] = 0
 
-				local err = math.abs(s[i+1]) --/ (bNorm > 0 and bNorm or 1)
+				local err = math.abs(s[i+1])
 				if errorCallback and errorCallback(err, iter, x) then return x end
 				if err < epsilon then	-- update approximation
 					updateX(x, h, s, v, i, mulAdd)
