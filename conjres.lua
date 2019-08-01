@@ -1,3 +1,5 @@
+local math = require 'ext.math'
+
 --[[
 source: https://en.wikipedia.org/wiki/Conjugate_residual_method#Preconditioning
 args:
@@ -7,7 +9,7 @@ args:
 	clone = vector clone function
 	dot = vector dot function
 	MInv = inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
@@ -36,9 +38,9 @@ return function(args)
 	local r = MInv(b - A(x))
 
 	local rSq = dot(r, r)
-	local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
-	if errorCallback and errorCallback(err, 0, x, rSq, bSq) then return x end
-	if err < epsilon then return x end
+	local err = math.sqrt(rSq)
+	if errorCallback and errorCallback(err, 0, x) then return x end
+	if not math.isfinite(err) or err < epsilon then return x end
 	
 	local Ar = A(r)
 	local rAr = dot(r, Ar)
@@ -53,9 +55,9 @@ return function(args)
 		local beta = nrAr / rAr
 
 		rSq = dot(nr, nr)
-		local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
-		if errorCallback and errorCallback(err, iter, x, rSq, bSq) then break end
-		if err < epsilon then break end
+		local err = math.sqrt(rSq)
+		if errorCallback and errorCallback(err, iter, x) then break end
+		if not math.isfinite(err) or err < epsilon then break end
 
 		r = nr
 		rAr = nrAr

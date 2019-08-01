@@ -1,3 +1,5 @@
+local math = require 'ext.math'
+
 --[[
 source: https://en.wikipedia.org/wiki/Conjugate_gradient_method#The_preconditioned_conjugate_gradient_method
 args:
@@ -7,7 +9,7 @@ args:
 	clone = vector clone
 	dot = vector dot
 	MInv = inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
@@ -32,9 +34,9 @@ return function(args)
 	local rDotMInvR = dot(r, MInvR)
 
 	local rSq = dot(r, r)
-	local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
-	if errorCallback and errorCallback(err, 0, x, rSq, bSq) then return x end
-	if err < epsilon then return x end
+	local err = math.sqrt(rSq)
+	if errorCallback and errorCallback(err, 0, x) then return x end
+	if not math.isfinite(err) or err < epsilon then return x end
 	
 	local p = clone(MInvR)
 	for iter=1,maxiter do
@@ -44,9 +46,9 @@ return function(args)
 		r = r - Ap * alpha
 	
 		rSq = dot(r, r)
-		local err = math.sqrt(bSq > 0 and rSq / bSq or rSq)
-		if errorCallback and errorCallback(err, iter, x, rSq, bSq) then break end
-		if err < epsilon then break end
+		local err = math.sqrt(rSq)
+		if errorCallback and errorCallback(err, iter, x) then break end
+		if not math.isfinite(err) or err < epsilon then break end
 		
 		MInvR = MInv(r)
 		local nRDotMInvR = dot(r, MInvR)

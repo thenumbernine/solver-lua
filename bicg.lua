@@ -1,3 +1,5 @@
+local math = require 'ext.math'
+
 --[[
 source: https://en.wikipedia.org/wiki/Biconjugate_gradient_method#The_algorithm
 args:
@@ -36,7 +38,7 @@ return function(args)
 	
 	local err = dot(r,r)
 	if errorCallback and errorCallback(err, 0) then return x end
-	if err < epsilon then return x end
+	if not math.isfinite(err) or err < epsilon then return x end
 
 	local p = clone(MInvR)
 	local pStar = MInvT(rStar)
@@ -57,7 +59,7 @@ return function(args)
 		
 		local err = dot(nr,nr)
 		if errorCallback and errorCallback(err, iter) then break end
-		if err < epsilon then break end
+		if not math.isfinite(err) or err < epsilon then break end
 		
 		local beta = nrStarMInvNR / rStarMInvR
 		local np = MInvNR + p * beta

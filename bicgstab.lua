@@ -1,3 +1,5 @@
+local math = require 'ext.math'
+
 --[[
 source: https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method#Preconditioned_BiCGSTAB
 args:
@@ -33,7 +35,7 @@ return function(args)
 
 	local err = dot(r,r)
 	if errorCallback and errorCallback(err, 0) then return x end
-	if err < epsilon then return x end
+	if not math.isfinite(err) or err < epsilon then return x end
 
 	local rho = 1
 	local alpha = 1
@@ -66,7 +68,7 @@ return function(args)
 	
 		local err = dot(nr, nr)
 		if errorCallback and errorCallback(err, iter, nx) then return nx end
-		if err < epsilon then	-- update approximation
+		if not math.isfinite(err) or err < epsilon then	-- update approximation
 			return nx
 		end
 

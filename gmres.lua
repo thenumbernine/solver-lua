@@ -1,4 +1,5 @@
 local table = require 'ext.table'
+local math = require 'ext.math'
 
 local backsub = require 'solver.backsub'
 
@@ -43,7 +44,7 @@ args:
 	dot = vector dot function
 	norm = (optional) vector norm. deault L2 norm via dot()
 	MInv = (optional) inverse of preconditioner linear function MInv : x -> x
-	errorCallback (optional) = function(|r|/|b|, iteration, x, |r|^2, |b|^2)
+	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
 	epsilon (optional) = error threshold at which to stop
 	maxiter (optional) = maximum iterations to run
@@ -70,9 +71,9 @@ return function(args)
 	local r = MInv(b - A(x))
 	local rLen = norm(r)
 
-	local err = bLen > 0 and rLen / bLen or rLen
-	if errorCallback and errorCallback(err, 0, x, rLen*rLen, bLen*bLen) then return x end
-	if err < epsilon then return x end
+	local err = rLen
+	if errorCallback and errorCallback(err, 0, x) then return x end
+	if not math.isfinite(err) or err < epsilon then return x end
 
 	local v = {}	--v[m+1][n]
 	for i=1,m+1 do
@@ -131,9 +132,9 @@ return function(args)
 			h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 			h[i+1][i] = 0
 			
-			local err = math.abs(s[i+1]) / (bLen > 0 and bLen or 1)
-			if errorCallback and errorCallback(err, iter, x, err*err*bLen*bLen, bLen*bLen) then return x end
-			if err < epsilon then	-- update approximation
+			local err = math.abs(s[i+1])
+			if errorCallback and errorCallback(err, iter, x) then return x end
+			if not math.isfinite(err) or err < epsilon then	-- update approximation
 				x = updateX(x, h, s, v, i)
 				return x
 			end
