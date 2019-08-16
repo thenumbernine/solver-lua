@@ -80,7 +80,9 @@ for _,solver in ipairs{
 		A = A,
 		b = b,
 		x = x,
-		errorCallback = print,
+		errorCallback = function(err, iter, x)
+			print(err, iter)
+		end,
 		restart = 10,
 	}()
 	splot(x, 'x-'..solver)

@@ -75,7 +75,7 @@ function CLSolver:init(args)
 	-- at least I know the __gc is cleaning up correctly
 	--self.args.free = function(buffer) buffer.obj:release() end
 	self.args.copy = self.args.copy or function(dst, src) 
-		self.env.cmds:enqueueCopyBuffer{
+		self.env.cmds[1]:enqueueCopyBuffer{
 			src = src.obj,
 			dst = dst.obj,
 			size = self.domain.volume * ffi.sizeof(self.type),
