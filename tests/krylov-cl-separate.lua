@@ -1,15 +1,13 @@
 #!/usr/bin/env luajit
---[[
-Trying to do multi-gpu with sub-buffers. Not working just yet.
-I haven't changed the underlying solvers, or swapped in enough pieces into their operations, to get it working (I'm thinking especially the dot)
-Likewise I'm suspicious of timing and sub-buffers spanning multiple devices.  I think I heard that it was not guaranteed to be sync'd.
-https://stackoverflow.com/questions/12567443/opencl-sending-same-cl-mem-to-multiple-devices
---]]
 require 'ext'
+--[[
+trying to do multi-gpu with separate buffers and update boundary regions
+--]]
 local cl = require 'ffi.OpenCL'
 local matrix = require 'matrix'
 local gnuplot = require 'gnuplot'
 local ffi = require 'ffi'
+local class = require 'ext.class'
 
 local n = 128
 
@@ -85,11 +83,23 @@ for i,device in ipairs(env.devices) do
 	regionBufs:insert(regionBuf)
 end
 
+-- holds chopped up buffers spread across several devices
+-- also abstracts anything that the solver is going to do with the buffer
+local MultiDeviceBuffer = class()
+
+function MultiDeviceBuffer:init()
+	self.bufs = table()
+	for i,region in ipairs(regions) do
+		self.buf = env:buffer
+	end
+end
+
+
 -- A x = b ... solve for x
-local b = env:buffer{name='b'}
+local b = MultiDeviceBuffer()
 
 -- TODO returning 'x' doesn't return an env:buffer object
-local x = env:buffer{name='x'}
+local x = MultiDeviceBuffer()
 
 local program = env:program{
 	code = table{
