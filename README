@@ -1,3 +1,0 @@
-putting my sparse/abstracted linear solvers into one place
-
-includes CPU and GPU version of conjugate gradient, conjugate residual, gmres, and JFNK
