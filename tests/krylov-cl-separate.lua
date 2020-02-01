@@ -211,8 +211,8 @@ for i,cmd in ipairs(env.cmds) do
 		dim = env.dim,
 		-- kernel domain is based on the write range
 		-- while the buffer is based on the read range
-		globalSize = domains[i].globalSize:ptr(),
-		localSize = domains[i].localSize:ptr(),
+		globalSize = domains[i].globalSize.s,
+		localSize = domains[i].localSize.s,
 	}
 end
 for i,cmd in ipairs(env.cmds) do
@@ -235,8 +235,8 @@ local function A(Y,X)
 		cmd:enqueueNDRangeKernel{
 			kernel = AKernel.obj,
 			dim = env.dim,
-			globalSize = domains[i].globalSize:ptr(),
-			localSize = domains[i].localSize:ptr(),
+			globalSize = domains[i].globalSize.s,
+			localSize = domains[i].localSize.s,
 			event = event,
 		}
 	end
