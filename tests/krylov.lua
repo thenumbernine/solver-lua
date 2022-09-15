@@ -270,7 +270,7 @@ for _,problemInfo in ipairs{
 			}
 			local filename = problemInfo.name..solverInfo.name..precondInfo.suffix
 			print(filename, x)
-			file[filename..'.txt'] = errors:concat'\n'
+			file(filename..'.txt'):write(errors:concat'\n')
 		end
 	end
 end
