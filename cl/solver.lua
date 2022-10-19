@@ -126,6 +126,10 @@ function CLSolver:init(args)
 		end		
 	end
 
+--[[ debugging - compare to CPU reduce
+	local cpuReduce = ffi.new('real[?]', self.domain.volume)
+--]]
+
 	if not self.args.dot then
 		makeProgram()
 		local mul = program:kernel{
@@ -147,6 +151,19 @@ function CLSolver:init(args)
 		self.args.dot = function(a,b)
 			mul(dot.buffer, a, b)
 			return dot()
+--[[
+local result = dot()
+--print('result', result)
+return result			
+--]]
+--[[ debugging - compare to CPU reduce
+			self.env.cmds[1]:enqueueReadBuffer{buffer=dot.buffer, block=true, size=ffi.sizeof'real', ptr=cpuReduce}
+			local sum = 0
+			for i=0,self.domain.volume-1 do
+				sum = sum + cpuReduce[i]
+			end
+			return sum
+--]]
 		end
 	end
 
