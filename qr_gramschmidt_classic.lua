@@ -35,7 +35,7 @@ return function(a)
 			for k=1,m do
 				sum = sum + q[k][i] * a[k][j]
 			end
-			r[i][j] = sum 
+			r[i][j] = sum
 			for k=1,m do
 				v[k][j] = v[k][j] - r[i][j] * q[k][i]
 			end

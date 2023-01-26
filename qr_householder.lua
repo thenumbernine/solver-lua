@@ -39,21 +39,25 @@ return function(a)
 	end
 	for k=1,n do
 		local v = {}
-		local vSq = 0
-		for i=k,m do
-			local a_ik = a[i][k]
-			v[i-k+1] = a_ik
-			vSq = vSq + a_ik * a_ik
+		do
+			local vSq = 0
+			for i=k,m do
+				local a_ik = a[i][k]
+				v[i-k+1] = a_ik
+				vSq = vSq + a_ik * a_ik
+			end
+			v[1] = v[1] + math.sqrt(vSq) * (v[1] < 0 and -1 or 1)
 		end
-		v[1] = v[1] + math.sqrt(vSq) * (v[1] < 0 and -1 or 1)
-		local vSq = 0
-		for i=1,#v do
-			local v_i = v[i]
-			vSq = vSq + v_i * v_i
-		end
-		local vLen = math.sqrt(vSq)
-		for i=1,#v do
-			v[i] = v[i] / vLen
+		do
+			local vSq = 0
+			for i=1,#v do
+				local v_i = v[i]
+				vSq = vSq + v_i * v_i
+			end
+			local vLen = math.sqrt(vSq)
+			for i=1,#v do
+				v[i] = v[i] / vLen
+			end
 		end
 		applyQ(a,k,k,n,v)
 		applyQ(qt,k,1,m,v)

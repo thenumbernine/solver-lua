@@ -82,7 +82,7 @@ function CLBiCGStab:__call()
 	local z = MInv and new'z' or nil
 	local t = new't'
 	local M1InvT = MInv and new'M1InvT' or t
-	
+
 	for iter=1,maxiter do
 		local nrho = dot(rHat, r)
 		local beta = nrho / rho * alpha / omega
@@ -101,22 +101,22 @@ function CLBiCGStab:__call()
 		A(t, z or s)
 		if M1Inv then M1Inv(M1InvT, t) end
 		local nomega = dot(M1InvT, z or s) / dot(M1InvT, M1InvT)
-		
+
 		-- x := x + alpha * y + nomega * z
 		mulAdd(x, x, y or np, alpha)
 		mulAdd(x, x, z or s, nomega)
-		
+
 		-- TODO "if x is accurate enough then quit"
-	
+
 		-- r := s - nomega * t
 		mulAdd(r, s, t, -nomega)
-		
+
 		-- TODO errorCallback
-		
-		local err = dot(r, r)
+
+		err = dot(r, r)
 		if errorCallback and errorCallback(err, iter, x) then break end
 		if err < epsilon then break end
-	
+
 		rho = nrho
 		p, np = np, p
 		omega = nomega
@@ -132,7 +132,7 @@ function CLBiCGStab:__call()
 		free(t)
 		if M1InvT then free(M1InvT) end
 	end
-	
+
 	return x
 end
 

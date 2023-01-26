@@ -14,8 +14,8 @@ CLJFNK.needs = {
 performs update of iteration x[n+1] = x[n] - (dF/dx)^-1 F(x[n])
 
 args:
-	f(f_of_x, x) = function reading x and writing f_of_x 
- 	x = initial vector
+	f(f_of_x, x) = function reading x and writing f_of_x
+	x = initial vector
 	dx = initial direction (optional, defaults to x)
 	epsilon = (optional) tolerance to stop newton descent
 	maxiter = (optional) max newton iterations
@@ -45,21 +45,21 @@ function CLJFNK:__call()
 	local lineSearch = args.lineSearch or 'bisect'
 	local lineSearchMaxIter = args.lineSearchMaxIter or 100
 	local jfnkEpsilon = args.jfnkEpsilon or 1e-6
-	
+
 	-- how should jfnk.new and gmres.new share?
 	local new = assert(args.new)
 	local dot = assert(args.dot)
-	local norm = args.norm or function(x) return dot(x,x) / self.domain.volume end
+	local norm = args.norm or function(x_) return dot(x_,x_) / self.domain.volume end
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
-	
+
 	local dx = args.dx
 	if not dx then
 		dx = new'dx'
 		args.copy(dx, x)
 	end
 
-	local f_of_x = new'f_of_x' 
+	local f_of_x = new'f_of_x'
 	local x_plus_dx = new'x_plus_dx'
 	local x_minus_dx = new'x_minus_dx'
 	local f_of_x_plus_dx = new'f_of_x_plus_dx'
@@ -85,15 +85,15 @@ function CLJFNK:__call()
 		-- this is where it helps to have access to the inplace-behavior that is wrapping jfnk-inplace
 		-- for that we'd have to change from a behvaior to inheritence.  sounds good.
 		x = dx,
-		
+
 		-- TODO these are accepting cl.buffers but are passing to mulAdd
-		-- which expects cl.obj.buffers 
+		-- which expects cl.obj.buffers
 		-- ... and subsequently passes to its kernels cl.buffers ...
 		-- so rather than re-wrap them
 		-- instead change all solver.cl's to use cl.obj.buffers
-		A = function(result, dx)
-			mulAdd(x_plus_dx, x, dx, jfnkEpsilon)
-			mulAdd(x_minus_dx, x, dx, -jfnkEpsilon)
+		A = function(result, dx_)
+			mulAdd(x_plus_dx, x, dx_, jfnkEpsilon)
+			mulAdd(x_minus_dx, x, dx_, -jfnkEpsilon)
 			f(f_of_x_plus_dx, x_plus_dx)
 			f(f_of_x_minus_dx, x_minus_dx)
 			mulAdd(result, f_of_x_plus_dx, f_of_x_minus_dx, -1)

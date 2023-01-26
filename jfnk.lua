@@ -5,7 +5,7 @@ performs update of iteration x[n+1] = x[n] - (dF/dx)^-1 F(x[n])
 
 args:
 	f = function from #x to #x
- 	x = initial vector
+	x = initial vector
 	dx = initial direction (optional, defaults to x)
 	epsilon = (optional) tolerance to stop newton descent
 	maxiter = (optional) max newton iterations
@@ -39,9 +39,9 @@ local function jfnk(args)
 		end
 		return sum
 	end
-	local norm = args.norm or function(x) return dot(x,x) / #x end
+	local norm = args.norm or function(x_) return dot(x_,x_) / #x_ end
 
-	local gmresArgs = args.gmres or {}	
+	local gmresArgs = args.gmres or {}
 	gmresArgs.clone = gmresArgs.clone or clone
 	gmresArgs.dot = gmresArgs.dot or dot
 
@@ -103,8 +103,8 @@ local function jfnk(args)
 		-- use jfnk approximation for dF/dx * dx
 		dx = gmres(table(gmresArgs, {
 			x = dx,
-			A = function(dx)
-				return (f(x + dx * jfnkEpsilon) - f(x - dx * jfnkEpsilon)) / (2 * jfnkEpsilon)
+			A = function(dx_)
+				return (f(x + dx_ * jfnkEpsilon) - f(x - dx_ * jfnkEpsilon)) / (2 * jfnkEpsilon)
 			end,
 			b = F_of_x,
 		}))

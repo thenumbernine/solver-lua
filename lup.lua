@@ -41,8 +41,8 @@ return function(a)
 		end
 		for j=k+1,m do
 			l[j][k] = u[j][k] / u[k][k]
-			for i=k,m do
-				u[j][i] = u[j][i] - l[j][k] * u[k][i]
+			for i2=k,m do
+				u[j][i2] = u[j][i2] - l[j][k] * u[k][i2]
 			end
 		end
 	end

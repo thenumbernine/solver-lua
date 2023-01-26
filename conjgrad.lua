@@ -25,9 +25,8 @@ return function(args)
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
-	
-	local bSq = dot(b,b)
 
+	--local bSq = dot(b,b)	-- TODO normalize err by bSq?
 	local x = clone(args.x or b)
 	local r = b - A(x)
 	local MInvR = MInv(r)
@@ -37,24 +36,24 @@ return function(args)
 	local err = math.sqrt(rSq)
 	if errorCallback and errorCallback(err, 0, x) then return x end
 	if not math.isfinite(err) or err < epsilon then return x end
-	
+
 	local p = clone(MInvR)
 	for iter=1,maxiter do
 		local Ap = A(p)
 		local alpha = rDotMInvR / dot(p, Ap)
 		x = x + p * alpha
 		r = r - Ap * alpha
-	
+
 		rSq = dot(r, r)
-		local err = math.sqrt(rSq)
+		err = math.sqrt(rSq)
 		if errorCallback and errorCallback(err, iter, x) then break end
 		if not math.isfinite(err) or err < epsilon then break end
-		
+
 		MInvR = MInv(r)
 		local nRDotMInvR = dot(r, MInvR)
 		local beta = nRDotMInvR / rDotMInvR
 		p = MInvR + p * beta
-		
+
 		rDotMInvR = nRDotMInvR
 	end
 	return x

@@ -19,6 +19,6 @@ print(jfnk{
 })
 
 -- current is the divergence of the EM vector potential
--- so how about an inverse divergence function? 
+-- so how about an inverse divergence function?
 -- in flat space that is just as easy solving for each xyz individually
--- in curved space the components mix together a bit 
+-- in curved space the components mix together a bit

@@ -7,33 +7,36 @@ local fwdsub = require 'solver.fwdsub'
 
 
 -- forward substitute test
-local errs = table()
-for n=1,10 do
-	for trial=1,10 do
-		local a = matrix.lambda({n,n}, function(i,j) return i<j and 0 or math.random(10) - 5 end)
-		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
-		local x = matrix(fwdsub(a, y))
-		local y_ = a * x
-		local err = (y - y_):norm()
-		errs:insert(err)
+do
+	local errs = table()
+	for n=1,10 do
+		for trial=1,10 do
+			local a = matrix.lambda({n,n}, function(i,j) return i<j and 0 or math.random(10) - 5 end)
+			local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
+			local x = matrix(fwdsub(a, y))
+			local y_ = a * x
+			local err = (y - y_):norm()
+			errs:insert(err)
+		end
 	end
+	print('fwdsub','err',(errs:sup()))
 end
-print('fwdsub','err',(errs:sup()))
 
 -- back substitute test
-local errs = table()
-for n=1,10 do
-	for trial=1,10 do
-		local a = matrix.lambda({n,n}, function(i,j) return i>j and 0 or math.random(10) - 5 end)
-		local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
-		local x = matrix(backsub(a, y))
-		local y_ = a * x
-		local err = (y - y_):norm() 
-		errs:insert(err)
+do
+	local errs = table()
+	for n=1,10 do
+		for trial=1,10 do
+			local a = matrix.lambda({n,n}, function(i,j) return i>j and 0 or math.random(10) - 5 end)
+			local y = matrix.lambda({n}, function(i) return math.random(10) - 5 end)
+			local x = matrix(backsub(a, y))
+			local y_ = a * x
+			local err = (y - y_):norm()
+			errs:insert(err)
+		end
 	end
+	print('backsub','err',(errs:sup()))
 end
-print('backsub','err',(errs:sup()))
-
 
 local function rebuildQR(q, r)
 	return matrix(q) * matrix(r)
@@ -47,7 +50,7 @@ end
 
 --[[
 solve a x = b for x
-let a = q r 
+let a = q r
 q r x = b
 r x = q^t b
 --]]
@@ -85,7 +88,7 @@ for n=1,5 do
 					solve = function(a, solverInfo)
 						local a_ = solverInfo.rebuild(solverInfo.solver(a))
 						local err = (a_ - a):norm()
-						return err	
+						return err
 					end,
 				},
 				{

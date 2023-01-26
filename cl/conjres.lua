@@ -24,7 +24,7 @@ args:
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
-	
+
 	new = function() creates and returns a new vector
 	free = function(v) frees vector
 	copy = function(dst, src) copies contents of src into dst
@@ -60,7 +60,7 @@ function CLConjRes:__call()
 	local Ar = new'Ar'
 	local MInvAp = MInv and new'MInvAp' or Ap
 
-	A(r, x)						-- A(x) : m  
+	A(r, x)						-- A(x) : m
 	mulAdd(r, b, r, -1)			-- r : m
 	if MInv then MInv(r, r) end	-- MInv(r) : n
 
@@ -81,18 +81,18 @@ function CLConjRes:__call()
 		for iter=1,maxiter do
 			if MInv then MInv(MInvAp, Ap) end
 			local ApDotMInvAp = dot(Ap, MInvAp)
-			if ApDotMInvAp == 0 then return false, "A(p) dot M^-1(A(p)) == 0" end 
+			if ApDotMInvAp == 0 then return false, "A(p) dot M^-1(A(p)) == 0" end
 			local alpha = rAr / ApDotMInvAp
 			if not math.isfinite(alpha) then return false, "alpha is not finite" end
 			mulAdd(x, x, p, alpha)
 			mulAdd(r, r, MInvAp, -alpha)
-	
+
 			rSq = dot(r, r)
-			local err = math.sqrt(rSq)
+			err = math.sqrt(rSq)
 			if errorCallback and errorCallback(err, iter, x) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
-		
+
 			A(Ar, r)
 			local nrAr = dot(r, Ar)
 			if not math.isfinite(nrAr) then return false, "next r dot A(r) is not finite" end
@@ -104,7 +104,7 @@ function CLConjRes:__call()
 			mulAdd(p, r, p, beta)
 			mulAdd(Ap, Ar, Ap, beta)
 		end
-	
+
 	until true -- just run once / use for break jumps
 
 	if free then

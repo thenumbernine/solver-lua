@@ -66,7 +66,7 @@ return function(args)
 	local m = args.restart or #args.b
 
 	local bLen = norm(b)
-	
+
 	local x = clone(args.x or b)
 	local r = MInv(b - A(x))
 	local rLen = norm(r)
@@ -94,14 +94,14 @@ return function(args)
 	for i=1,m do
 		cs[i] = 0
 	end
-	
+
 	local sn = {}	--sn[m]
 	for i=1,m do
 		sn[i] = 0
 	end
 
 	local s = {}	--s[m+1]
-	
+
 	local iter = 0
 	while true do
 
@@ -131,8 +131,8 @@ return function(args)
 			s[i], s[i+1] = cs[i] * s[i], -sn[i] * s[i]	-- approximate residual norm
 			h[i][i] = cs[i] * h[i][i] + sn[i] * h[i+1][i]
 			h[i+1][i] = 0
-			
-			local err = math.abs(s[i+1])
+
+			err = math.abs(s[i+1])
 			if errorCallback and errorCallback(err, iter, x) then return x end
 			if not math.isfinite(err) or err < epsilon then	-- update approximation
 				x = updateX(x, h, s, v, i)
@@ -140,13 +140,13 @@ return function(args)
 			end
 		end
 		if iter >= maxiter then break end
-		
+
 		x = updateX(x, h, s, v, m)
-	
+
 		r = MInv(b - A(x))		-- compute residual
 		rLen = norm(r)
 		s[m+1] = rLen
-		local err = rLen / (bLen > 0 and bLen or 1)		-- check convergence
+		err = rLen / (bLen > 0 and bLen or 1)		-- check convergence
 		if err < epsilon then break end
 	end
 	return x

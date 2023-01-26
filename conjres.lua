@@ -17,7 +17,7 @@ args:
 vectors need operators + - * overloaded
 
 this method applies MInv to r, then computes norms, etc
-the conjugate gradient applies MInv as a weighted norm of r (i.e. only applies once between r's rather than twice) 
+the conjugate gradient applies MInv as a weighted norm of r (i.e. only applies once between r's rather than twice)
 which is better?
 which is correct?
 
@@ -31,9 +31,8 @@ return function(args)
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
 	local maxiter = args.maxiter or 10000
-	
-	local bSq = dot(b,b)
 
+	--local bSq = dot(b,b)	-- TODO normalize residual error by bSq?
 	local x = clone(args.x or b)
 	local r = MInv(b - A(x))
 
@@ -41,7 +40,7 @@ return function(args)
 	local err = math.sqrt(rSq)
 	if errorCallback and errorCallback(err, 0, x) then return x end
 	if not math.isfinite(err) or err < epsilon then return x end
-	
+
 	local Ar = A(r)
 	local rAr = dot(r, Ar)
 	local p = clone(r)
@@ -55,13 +54,13 @@ return function(args)
 		local beta = nrAr / rAr
 
 		rSq = dot(nr, nr)
-		local err = math.sqrt(rSq)
+		err = math.sqrt(rSq)
 		if errorCallback and errorCallback(err, iter, x) then break end
 		if not math.isfinite(err) or err < epsilon then break end
 
 		r = nr
 		rAr = nrAr
-		Ar = nAr
+		--Ar = nAr	-- don't need to track this?
 		p = nr + p * beta
 		Ap = nAr + Ap * beta
 	end

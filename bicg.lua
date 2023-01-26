@@ -29,42 +29,43 @@ return function(args)
 	local maxiter = 10000
 
 	b = clone(b)
+	local bStar = clone(b)	-- TODO ???
 	local x = clone(args.x or b)
 	local xStar = clone(x)
 	local r = b - A(x)
 	local MInvR = MInv(r)
 	local rStar = bStar - AT(xStar)
 	local rStarMInvR = dot(rStar, MInvR)
-	
+
 	local err = dot(r,r)
 	if errorCallback and errorCallback(err, 0) then return x end
 	if not math.isfinite(err) or err < epsilon then return x end
 
 	local p = clone(MInvR)
 	local pStar = MInvT(rStar)
-	
+
 	for iter=1,maxiter do
 		local Ap = A(p)
 		local ATPStar = AT(pStar)
-		
+
 		local alpha = rStarMInvR / dot(pStar, Ap)	-- dot(pStar, Ap) == dot(ATPStar, p) ... either one
 		local nx = x + p * alpha
 		local nxStar = xStar + pStar * alpha
 		local nr = r - Ap * alpha
 		local nrStar = rStar - ATPStar * alpha
-	
+
 		local MInvNR = MInv(nr)
 		local MInvTNRStar = MInvT(nrStar)
 		local nrStarMInvNR = dot(nrStar, MInvNR)	-- or dot(MInvTNRStar, nr)
-		
-		local err = dot(nr,nr)
+
+		err = dot(nr,nr)
 		if errorCallback and errorCallback(err, iter) then break end
 		if not math.isfinite(err) or err < epsilon then break end
-		
+
 		local beta = nrStarMInvNR / rStarMInvR
 		local np = MInvNR + p * beta
 		local npStar = MInvTNRStar + pStar * beta
-		
+
 		x = nx
 		xStar = nxStar
 		r = nr

@@ -33,10 +33,10 @@ local A = env:kernel{
 	argsIn = {{name='x', type='const global real*', buffer=true}},
 	body = [[
 	//OOB
-	if (i.x >= size.x || i.y >= size.y) return;	
+	if (i.x >= size.x || i.y >= size.y) return;
 
 	//boundary
-	if (i.x == 0 || 
+	if (i.x == 0 ||
 		i.y == 0 ||
 		i.x == size.x-1 ||
 		i.y == size.y-1)
@@ -88,7 +88,7 @@ for _,solver in ipairs{
 		A = A,
 		b = b,
 		x = x,
-		errorCallback = function(res, iter, x)
+		errorCallback = function(res, iter, x_)
 			print(iter, res)
 		end,
 		restart = 10,

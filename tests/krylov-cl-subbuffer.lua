@@ -26,7 +26,7 @@ typedef struct {
 	int4 supersize;	//size of the parent buffer
 	int4 size;		//size of this buffer
 	int4 step;		//step of this buffer (based on subbuffer / xreadmax-xreadmin)
-	
+
 	//(n-1)-axis chopped up
 	int readmin;	//sub-buffer range
 	int readmax;
@@ -61,7 +61,7 @@ for i,device in ipairs(env.devices) do
 
 	region[0].size = region[0].supersize
 	region[0].size.y = region[0].readmax - region[0].readmin
-	
+
 	region[0].step.x = 1
 	region[0].step.y = region[0].size.x
 	region[0].step.z = region[0].size.y * region[0].step.x
@@ -112,7 +112,7 @@ kernel void bInit(
 	//range in the super buffer
 	int4 i = iwr;
 	i.y += region->writemin;
-	
+
 	b[subindex] = (
 		i.x >= region->supersize.x/4 && i.x < region->supersize.x*3/4 &&
 		i.y >= region->supersize.y/4 && i.y < region->supersize.y*3/4
@@ -137,9 +137,9 @@ kernel void A(
 	//range in the super buffer
 	int4 i = iwr;
 	i.y += region->writemin;
-	
+
 	//boundary
-	if (i.x == 0 || 
+	if (i.x == 0 ||
 		i.y == 0 ||
 		i.x == region->supersize.x-1 ||
 		i.y == region->supersize.y-1)
@@ -182,9 +182,9 @@ end
 local subBuffersForBuffer = table()
 local function getSubBuffers(buf)
 	local sbufs = subBuffersForBuffer[buf]
-	if not sbufs then 
+	if not sbufs then
 		sbufs = chopUpBuffer(buf)
-		subBuffersForBuffer[buf] = sbufs 
+		subBuffersForBuffer[buf] = sbufs
 	end
 	return sbufs
 end
@@ -262,7 +262,7 @@ for _,solver in ipairs{
 		A = A,
 		b = b,
 		x = x,
-		errorCallback = function(res, iter, x)
+		errorCallback = function(res, iter, x_)
 			print(iter, res)
 		end,
 		restart = 10,

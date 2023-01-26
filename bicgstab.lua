@@ -20,6 +20,7 @@ return function(args)
 	local A = assert(args.A)
 	local clone = assert(args.clone)
 	local dot = assert(args.dot)
+	local M1Inv = args.M1Inv or clone
 	local MInv = args.MInv or clone
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-50
@@ -28,10 +29,10 @@ return function(args)
 
 	local b = clone(assert(args.b))
 	local x = clone(args.x or b)
-	local xStar = clone(x)
+	--local xStar = clone(x)
 	local r = b - A(x)
 
-	local rHat = clone(args.rHat or r)	-- pick some rHat such that r dot rHat ~= 0 
+	local rHat = clone(args.rHat or r)	-- pick some rHat such that r dot rHat ~= 0
 
 	local err = dot(r,r)
 	if errorCallback and errorCallback(err, 0) then return x end
@@ -65,8 +66,8 @@ return function(args)
 		-- TODO "if x is accurate enough then quit"
 		local nr = s - nomega * t
 		-- TODO errorCallback
-	
-		local err = dot(nr, nr)
+
+		err = dot(nr, nr)
 		if errorCallback and errorCallback(err, iter, nx) then return nx end
 		if not math.isfinite(err) or err < epsilon then	-- update approximation
 			return nx

@@ -11,10 +11,10 @@ args:
 	maxiter = maxiter of solver
 	new = (optional) function(name) = allocator
 	copy = (optional) function(dst, src) copy function
-		dst, src are of type cl.obj.buffer 
+		dst, src are of type cl.obj.buffer
 	mulAdd = (optional) function(y, a, b, s) performs y = a + b * s
 		y,a,b are cl.obj.buffer, s = number
-	
+
 	only in gmres, jfnk:
 	scale = (optional) function(y, a, s) performs y = a * s
 		y,a are cl.obj.buffer, s = number
@@ -26,14 +26,14 @@ args:
 	only in conjgrad, conjres, gmres:
 	MInv = function(y,x) preconditioner
 		x and y are of type cl.obj.buffer
-	A = function(y, x) that reads x and stores the function result in 'y' 
-		x and y are of type cl.obj.buffer	
+	A = function(y, x) that reads x and stores the function result in 'y'
+		x and y are of type cl.obj.buffer
 	...
 	the rest of the args are passed on to 'inPlaceSolver'
 --]]
 function CLSolver:init(args)
 	self.env = assert(args.env)
-	
+
 	self.args = {}
 	for k,v in pairs(args) do self.args[k] = v end
 
@@ -54,7 +54,7 @@ function CLSolver:init(args)
 	end
 
 	-- how to determine the domain?
-	local domain = 
+	local domain =
 		args.domain
 		or (args.A and type(args.A) == 'table' and args.A.domain)
 		or (args.f and type(args.f) == 'table' and args.f.domain)
@@ -67,14 +67,14 @@ function CLSolver:init(args)
 	-- this assumption is based on a property for Krylov solvers - that they take n iterations for a n-dimensional problem
 	self.args.maxiter = self.args.maxiter or self.domain.volume
 
-	self.args.new = self.args.new or function(...) 
-		return self:newBuffer(...) 
+	self.args.new = self.args.new or function(...)
+		return self:newBuffer(...)
 	end
 
 	-- hmm, this release, coupled with the __gc's release, makes things crash ...
 	-- at least I know the __gc is cleaning up correctly
 	--self.args.free = function(buffer) buffer.obj:release() end
-	self.args.copy = self.args.copy or function(dst, src) 
+	self.args.copy = self.args.copy or function(dst, src)
 		self.env.cmds[1]:enqueueCopyBuffer{
 			src = src.obj,
 			dst = dst.obj,
@@ -123,7 +123,7 @@ function CLSolver:init(args)
 		}
 		self.args.scale = function(y,a,s)
 			scale(y, a, ffi.new('real[1]', s))
-		end		
+		end
 	end
 
 --[[ debugging - compare to CPU reduce
@@ -143,7 +143,7 @@ function CLSolver:init(args)
 			},
 			body = [[	y[index] = a[index] * b[index];]],
 		}
-	
+
 		local dot = self.env:reduce{
 			count = self.domain.volume,
 			op = function(x,y) return x..' + '..y end,
@@ -154,7 +154,7 @@ function CLSolver:init(args)
 --[[
 local result = dot()
 --print('result', result)
-return result			
+return result
 --]]
 --[[ debugging - compare to CPU reduce
 			self.env.cmds[1]:enqueueReadBuffer{buffer=dot.buffer, block=true, size=ffi.sizeof'real', ptr=cpuReduce}

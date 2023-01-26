@@ -16,13 +16,13 @@ local function updateX(x, h, s, v, i, mulAdd)
 	for j=1,i do
 		subH[j] = {table.unpack(h[j], 1, i)}
 	end
---print('subH', require 'matrix'(subH))	
---print('subS', require 'matrix'(subS))	
+--print('subH', require 'matrix'(subH))
+--print('subS', require 'matrix'(subS))
 	local y = backsub(subH, subS)
---print('y', require 'matrix'(y))	
+--print('y', require 'matrix'(y))
 	--x = x + V(:,1:i)*y
 	for j=1,i do
-		mulAdd(x, x, v[j], y[j])	
+		mulAdd(x, x, v[j], y[j])
 	end
 	return x
 end
@@ -92,14 +92,14 @@ function CLGMRes:__call()
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
 	local m = args.restart or math.min(10, self.domain.volume)	-- don't default this to anything too big
-	
+
 	local copy = assert(args.copy)
 	local new = assert(args.new)
 	local free = args.free
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
 	local scale = assert(args.scale)
-	
+
 	local norm = args.norm or function(v)
 		return math.sqrt(dot(v, v))
 	end
@@ -111,7 +111,7 @@ function CLGMRes:__call()
 	end
 
 	local r = new'r'	--[n]
-	
+
 	--local bNorm = norm(b)
 
 	-- r = M^-1 (b - A x)
@@ -133,9 +133,9 @@ function CLGMRes:__call()
 		end)
 		-- if restart is gonna be small then maybe these should be Lua tables:
 		local h = range(m+1):map(function(i)	--[m+1][m]
-			return range(m):map(function(i)
+			return range(m):map(function(i2)
 				return 0
-			end) 
+			end)
 		end)
 		local cs = {}	--[m]
 		for i=1,m do cs[i] = 0 end
@@ -147,13 +147,13 @@ function CLGMRes:__call()
 		while true do
 
 			scale(v[1], r, 1/rNorm)
-		
+
 			-- s = [rNorm, 0, 0, ...]
 			s[1] = rNorm
 			for i=2,m+1 do
 				s[i] = 0
 			end
-	
+
 			for i=1,m do		-- construct orthonormal basis using Gram-Schmidt
 				iter = iter + 1
 				if iter >= maxiter then break end
@@ -181,7 +181,7 @@ function CLGMRes:__call()
 --print('h['..i..']['..i..'] = '..h[i][i])
 				h[i+1][i] = 0
 
-				local err = math.abs(s[i+1])
+				err = math.abs(s[i+1])
 				if errorCallback and errorCallback(err, iter, x) then return x end
 				if err < epsilon then	-- update approximation
 					updateX(x, h, s, v, i, mulAdd)
@@ -189,17 +189,17 @@ function CLGMRes:__call()
 				end
 			end
 			if iter >= maxiter then break end
-		
+
 			updateX(x, h, s, v, m, mulAdd)
 
 			-- r = M^-1 (b - A x)
 			A(r, x)
 			mulAdd(r, b, r, -1)
 			if MInv then MInv(r, r) end
-			
+
 			rNorm = norm(r)
 			s[m+1] = rNorm
-			local err = rNorm --/ (bNorm > 0 and bNorm or 1)		-- check convergence
+			err = rNorm --/ (bNorm > 0 and bNorm or 1)		-- check convergence
 			if err < epsilon then break end
 		end
 
@@ -211,7 +211,7 @@ function CLGMRes:__call()
 			free(sn)
 			free(s)
 		end
-	
+
 	until true -- just run once / use for break jumps
 
 	if free then

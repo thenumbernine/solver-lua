@@ -109,7 +109,7 @@ local function matfuncT(A)
 end
 
 for _,problemInfo in ipairs{
-	-- works for all 
+	-- works for all
 	-- gmres is slightly off
 	{
 		name='prob1',
@@ -122,7 +122,7 @@ for _,problemInfo in ipairs{
 		},
 		b={1,2,3,4,5},
 	},
-	
+
 	-- nans for jacobi
 	-- nans for gmres
 	{
@@ -155,7 +155,7 @@ for _,problemInfo in ipairs{
 		},
 		b={2,0},
 	},
---[[	
+--[[
 	(function()
 		local n = 16
 		local A = {}
@@ -227,11 +227,11 @@ for _,problemInfo in ipairs{
 			local A,b = problemInfo.A,problemInfo.b
 			local fA = matfunc(A)
 			local fMInv = precondInfo.makeFMInv(A)
-		
+
 			-- only used for biconjugate methods
 			local fAT = matfuncT(A)
 			local fMInvT = fMInv	-- so long as we're just using Jacobi preconditioning -- i.e. diagonals
-		
+
 			-- only used for jacobi method
 			local ADiag = vec(range(#A):map(function(i) return A[i][i] end))
 
@@ -253,17 +253,17 @@ for _,problemInfo in ipairs{
 				MInv = fMInv,
 				MInvT = fMInvT,	-- only for BiCG (the unstable version)
 				-- used for jacobi
-				scale = function(a,b)
-					local c = vec(a)
+				scale = function(a_,b_)
+					local c = vec(a_)
 					for i=1,#c do
-						c[i] = c[i] * b[i]
+						c[i] = c[i] * b_[i]
 					end
 					return c
 				end,
-				invScale = function(a,b)
-					local c = vec(a)
+				invScale = function(a_,b_)
+					local c = vec(a_)
 					for i=1,#c do
-						c[i] = c[i] / b[i]
+						c[i] = c[i] / b_[i]
 					end
 					return c
 				end,

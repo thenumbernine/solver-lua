@@ -24,7 +24,7 @@ args:
 		returns true if iterations should be stopped
 	epsilon (optional)
 	maxiter (optional)
-	
+
 	new = function() returns and create a new vector
 	free = function(v) frees vector
 	copy = function(dst, src) copies contents of src into dst
@@ -49,28 +49,28 @@ function CLConjGrad:__call()
 	local args = self.args
 	local A = assert(args.A)	-- A : n -> m
 	local b = assert(args.b)	-- m
-	
+
 	local MInv = args.MInv		-- MInv : m -> n
 	local errorCallback = args.errorCallback
 	local epsilon = args.epsilon or 1e-7
 	local maxiter = args.maxiter or 1000
-	
+
 	local copy = assert(args.copy)
 	local new = assert(args.new)
 	local free = args.free
 	local dot = assert(args.dot)
 	local mulAdd = assert(args.mulAdd)
-	
+
 	local x = args.x			-- n
 	if not x then
 		x = new'x'
 		copy(x, b)				-- n
 	end
-	
+
 	local r = new'r'			-- m
 	local p = new'p'			-- n
 	local Ap = new'Ap'			-- m
-	
+
 	-- if MInv is omitted then r is used directly for MInvR, since no computation is necessary.
 	-- if our problem is rectangular with m >= n then the MInvR operation can be thought of as truncation
 	--  from r's m elements to MInvR's n elements.
@@ -80,7 +80,7 @@ function CLConjGrad:__call()
 	-- but for m >= n we still wouldn't crash, the dot would just truncate the data
 	A(r, x)						-- A(x) : m
 	mulAdd(r, b, r, -1)			-- r : m
-	
+
 	if MInv then MInv(MInvR, r) end	-- MInv(r) : n
 	local rDotMInvR = dot(r, MInvR)	-- r dot MInv(r) : m, n -> 1
 
@@ -90,7 +90,7 @@ function CLConjGrad:__call()
 		if errorCallback and errorCallback(err, 0, x) then break end
 		if not math.isfinite(err) then return false, "error is not finite" end
 		if err < epsilon then break end
-		
+
 		copy(p, MInvR)					-- p : n
 		for iter=1,maxiter do
 			A(Ap, p)							-- Ap : m
@@ -98,25 +98,25 @@ function CLConjGrad:__call()
 			local alpha = rDotMInvR / ApDotP
 			mulAdd(x, x, p, alpha)				-- x : n
 			mulAdd(r, r, Ap, -alpha)			-- r : m
-			
+
 			if MInv then MInv(MInvR, r) end		-- MInv(r) : n
 			local nRDotMInvR = dot(r, MInvR)	-- r dot MInv(r) : m, n -> 1
-		
+
 			rSq = dot(r, r)
-			local err = math.sqrt(rSq)
+			err = math.sqrt(rSq)
 			if errorCallback and errorCallback(err, iter, x) then break end
 			if not math.isfinite(err) then return false, "error is not finite" end
 			if err < epsilon then break end
-			
+
 			local beta = nRDotMInvR / rDotMInvR
 			rDotMInvR = nRDotMInvR
-			
+
 			mulAdd(p, MInvR, p, beta)			-- p : n
 		end
 	until true	-- run once, use break to jump out. my stupid CS education has scarred me from ever using goto's again.
 
-	if free then 
-		free(r) 
+	if free then
+		free(r)
 		free(p)
 		free(Ap)
 		if MInv then free(MInvR) end
