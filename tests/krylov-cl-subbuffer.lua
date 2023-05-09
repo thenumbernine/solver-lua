@@ -22,7 +22,7 @@ local env = require 'cl.obj.env'{
 }
 
 local regionType = [[
-typedef struct {
+typedef struct region_t {
 	int4 supersize;	//size of the parent buffer
 	int4 size;		//size of this buffer
 	int4 step;		//step of this buffer (based on subbuffer / xreadmax-xreadmin)
