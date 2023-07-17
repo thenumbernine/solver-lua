@@ -1,7 +1,7 @@
 #!/usr/bin/env luajit
 local class = require 'ext.class'
 local table = require 'ext.table'
-local file = require 'ext.file'
+local path = require 'ext.path'
 local range = require 'ext.range'
 local jacobi = require 'solver.jacobi'
 local conjgrad = require 'solver.conjgrad'
@@ -270,7 +270,7 @@ for _,problemInfo in ipairs{
 			}
 			local filename = problemInfo.name..solverInfo.name..precondInfo.suffix
 			print(filename, x)
-			file(filename..'.txt'):write(errors:concat'\n')
+			path(filename..'.txt'):write(errors:concat'\n')
 		end
 	end
 end
