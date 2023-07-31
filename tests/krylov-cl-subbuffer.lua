@@ -6,7 +6,7 @@ Likewise I'm suspicious of timing and sub-buffers spanning multiple devices.  I 
 https://stackoverflow.com/questions/12567443/opencl-sending-same-cl-mem-to-multiple-devices
 --]]
 require 'ext'
-local cl = require 'ffi.OpenCL'
+local cl = require 'ffi.req' 'OpenCL'
 local matrix = require 'matrix'
 local gnuplot = require 'gnuplot'
 local ffi = require 'ffi'

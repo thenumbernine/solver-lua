@@ -3,7 +3,7 @@ require 'ext'
 --[[
 trying to do multi-gpu with separate buffers and update boundary regions
 --]]
-local cl = require 'ffi.OpenCL'
+local cl = require 'ffi.req' 'OpenCL'
 local matrix = require 'matrix'
 local gnuplot = require 'gnuplot'
 local ffi = require 'ffi'
