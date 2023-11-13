@@ -11,6 +11,7 @@ args:
 	MInv = inverse of preconditioner linear function MInv : x -> x
 	errorCallback (optional) = function(|r|, iteration, x)
 		returns true if iterations should be stopped
+		TODO rename this to 'residualCallbak' or 'update' or something else?
 	epsilon (optional)
 	maxiter (optional)
 
