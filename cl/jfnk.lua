@@ -160,8 +160,8 @@ function CLJFNK:__call()
 		if errorCallback and errorCallback(err, iter) then return x end
 		if err < epsilon then return x end
 
-		-- solve dx = (dF/dx)^-1 F(x) via iterative (dF/dx) dx = f(x)
-		-- use jfnk approximation for dF/dx * dx
+		-- solve dx = (∂F/∂x)^-1 F(x) via iterative (∂F/∂x) dx = f(x)
+		-- use JFNK approximation for dF/dx * dx
 		gmres()
 
 		-- trace along dx to find minima of solution
