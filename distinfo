@@ -32,10 +32,10 @@ files = {
 	["tests/krylov.lua"] = "solver/tests/krylov.lua",
 }
 deps = {
-	"cl",
 	"ext",
 	"ffi",
 	"gnuplot",
 	"matrix",
 	"vec",
+	--"cl",	-- solver uses cl but isn't dependent on it, and if you are using it with solver then you have to include it elsewhere, so I will disable it here as to not add in extra dependencies where they are not necessary.
 }
