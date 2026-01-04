@@ -1,6 +1,6 @@
 #!/usr/bin/env luajit
 require 'ext'
-local cl = require 'cl.ffi.OpenCL'
+local cl = require 'cl'
 local matrix = require 'matrix'
 local gnuplot = require 'gnuplot'
 
