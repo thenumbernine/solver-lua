@@ -3,6 +3,8 @@
 --------------------------------------------
 
 name = "solver"
+git = "https://github.com/thenumbernine/solver-lua"
+
 files = {
 	"README.md",
 	"backsub.lua",
