@@ -43,5 +43,5 @@ deps = {
 	"ext",
 	"gnuplot",
 	"matrix",
-	"vec",
+	--"vec",	-- only used by tests/jfnk-cl.lua and honestly idk that this tests even works
 }
